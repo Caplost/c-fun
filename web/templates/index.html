@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 在线评测系统</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>C++ 在线评测系统</h1>
+    </header>
+    
+    <nav>
+        <ul>
+            <li><a href="#" id="nav-problems">题目列表</a></li>
+            <li><a href="#" id="nav-submissions">我的提交</a></li>
+        </ul>
+    </nav>
+    
+    <main class="container">
+        <!-- 题目列表 -->
+        <section id="problems-list">
+            <div class="problems-header">
+                <h2>题目列表</h2>
+                <button id="import-problems-btn" class="action-btn">批量导入题目</button>
+            </div>
+            
+            <!-- 添加过滤和分类功能 -->
+            <div class="problems-filter">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">全部题目</button>
+                    <button class="filter-tab" data-filter="solved">已解决</button>
+                    <button class="filter-tab" data-filter="unsolved">未解决</button>
+                </div>
+                <div class="tag-filters">
+                    <span>知识点筛选：</span>
+                    <div id="tag-filter-container" class="tag-filter-container">
+                        <!-- 标签会通过JS动态加载 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="problems-container">
+                <!-- 题目列表将通过 JavaScript 动态加载 -->
+                <div class="loading">加载中...</div>
+            </div>
+        </section>
+        
+        <!-- 题目导入对话框 -->
+        <div id="import-dialog" class="dialog">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <h3>批量导入题目</h3>
+                    <span class="close-btn">&times;</span>
+                </div>
+                <div class="dialog-body">
+                    <p>请在下方输入JSON格式的题目数据：</p>
+                    <textarea id="import-json" placeholder='{"problems": [{"title": "题目标题", "description": "题目描述", ...}]}' rows="15"></textarea>
+                    <div class="import-template">
+                        <p>JSON格式示例：</p>
+<pre>{
+  "problems": [
+    {
+      "title": "题目标题",
+      "description": "&lt;h3&gt;【题目描述】&lt;/h3&gt;&lt;p&gt;这是题目描述&lt;/p&gt;&lt;h3&gt;输入&lt;/h3&gt;&lt;p&gt;输入说明&lt;/p&gt;&lt;h3&gt;输出&lt;/h3&gt;&lt;p&gt;输出说明&lt;/p&gt;",
+      "difficulty": "Easy",
+      "time_limit": 1000,
+      "memory_limit": 65536,
+      "test_cases": [
+        {
+          "input": "测试输入",
+          "output": "测试输出",
+          "is_example": true
+        }
+      ]
+    }
+  ]
+}</pre>
+                    </div>
+                </div>
+                <div class="dialog-footer">
+                    <button id="cancel-import" class="btn">取消</button>
+                    <button id="submit-import" class="btn primary-btn">导入</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 题目详情 -->
+        <section id="problem-detail" class="problem-detail">
+            <div class="problem-header">
+                <h2 id="problem-title"></h2>
+                <div class="problem-info">
+                    <span id="problem-difficulty"></span>
+                    <span id="problem-limits"></span>
+                </div>
+            </div>
+            
+            <div class="problem-content">
+                <div class="problem-description">
+                    <h3>【题目描述】</h3>
+                    <div id="problem-description-text"></div>
+                    
+                    <h3>输入</h3>
+                    <div id="problem-input"></div>
+                    
+                    <h3>输出</h3>
+                    <div id="problem-output"></div>
+                    
+                    <h3>输出样例</h3>
+                    <div id="examples-container"></div>
+                </div>
+            </div>
+            
+            <div class="code-editor-container">
+                <h3>提交解答</h3>
+                <div class="code-editor-wrapper">
+                    <label for="code-editor" class="visually-hidden">代码编辑器</label>
+                    <textarea id="code-editor" placeholder="在这里编写您的 C++ 代码..." title="代码编辑器"></textarea>
+                </div>
+                <div class="editor-controls">
+                    <button id="submit-btn">提交</button>
+                    <button id="back-to-problems" class="back-btn">返回题目列表</button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 提交结果 -->
+        <section id="submission-result" class="submission-result">
+            <div class="result-header">
+                <h2>提交结果</h2>
+                <div id="result-status" class="status"></div>
+            </div>
+            
+            <div id="result-details" class="result-details">
+                <!-- 结果详情将通过 JavaScript 动态加载 -->
+            </div>
+            
+            <div class="result-controls">
+                <button id="back-to-problem" class="back-btn">返回题目</button>
+                <button id="back-to-problems-from-result" class="back-btn">返回题目列表</button>
+            </div>
+        </section>
+    </main>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html> 

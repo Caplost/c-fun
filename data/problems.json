@@ -1,0 +1,47 @@
+{
+  "1": {
+    "id": 1,
+    "title": "两数之和",
+    "description": "\u003ch3\u003e【题目描述】\u003c/h3\u003e\u003cp\u003e给定一个整数数组 nums 和一个目标值 target，请你在该数组中找出和为目标值的那两个整数，并返回他们的数组下标。\u003c/p\u003e\u003cp\u003e你可以假设每种输入只会对应一个答案。但是，数组中同一个元素不能使用两次。\u003c/p\u003e\u003ch3\u003e输入\u003c/h3\u003e\u003cp\u003e第一行为数组大小 n 和目标值 target，以空格分隔。\u003c/p\u003e\u003cp\u003e第二行为 n 个整数，表示数组 nums。\u003c/p\u003e\u003ch3\u003e输出\u003c/h3\u003e\u003cp\u003e输出为两个整数，分别为符合条件的两个数的下标（从0开始计数），以空格分隔。输出的下标可以是任意顺序。\u003c/p\u003e",
+    "difficulty": "Easy",
+    "time_limit": 1000,
+    "memory_limit": 65536,
+    "created_at": "2025-02-27T19:52:22.572747+08:00"
+  },
+  "2": {
+    "id": 2,
+    "title": "回文数",
+    "description": "\u003ch3\u003e【题目描述】\u003c/h3\u003e\u003cp\u003e判断一个整数是否是回文数。回文数是指正序（从左向右）和倒序（从右向左）读都是一样的整数。\u003c/p\u003e\u003ch3\u003e输入\u003c/h3\u003e\u003cp\u003e一个整数 x。\u003c/p\u003e\u003ch3\u003e输出\u003c/h3\u003e\u003cp\u003e如果 x 是回文数，输出 true，否则输出 false。\u003c/p\u003e",
+    "difficulty": "Easy",
+    "time_limit": 500,
+    "memory_limit": 32768,
+    "created_at": "2025-02-27T19:52:22.572766+08:00"
+  },
+  "3": {
+    "id": 3,
+    "title": "合并两个有序链表",
+    "description": "\u003ch3\u003e【题目描述】\u003c/h3\u003e\u003cp\u003e将两个升序链表合并为一个新的升序链表并返回。新链表是通过拼接给定的两个链表的所有节点组成的。\u003c/p\u003e\u003cp\u003e在这个题目中，我们使用数组来表示链表。\u003c/p\u003e\u003ch3\u003e输入\u003c/h3\u003e\u003cp\u003e第一行是第一个链表的元素，以空格分隔。如果链表为空，则输入为空行。\u003c/p\u003e\u003cp\u003e第二行是第二个链表的元素，以空格分隔。如果链表为空，则输入为空行。\u003c/p\u003e\u003ch3\u003e输出\u003c/h3\u003e\u003cp\u003e合并后的链表元素，以空格分隔。\u003c/p\u003e",
+    "difficulty": "Medium",
+    "time_limit": 800,
+    "memory_limit": 49152,
+    "created_at": "2025-02-27T19:52:22.572774+08:00"
+  },
+  "4": {
+    "id": 4,
+    "title": "测试持久化",
+    "description": "\u003ch3\u003e【题目描述】\u003c/h3\u003e\u003cp\u003e测试数据持久化功能\u003c/p\u003e\u003ch3\u003e输入\u003c/h3\u003e\u003cp\u003e一个整数\u003c/p\u003e\u003ch3\u003e输出\u003c/h3\u003e\u003cp\u003e输入的整数乘以2\u003c/p\u003e",
+    "difficulty": "Easy",
+    "time_limit": 1000,
+    "memory_limit": 65536,
+    "created_at": "2025-02-27T19:52:42.635751+08:00"
+  },
+  "5": {
+    "id": 5,
+    "title": "题目标题1212",
+    "description": "\u003ch3\u003e【题目描述】\u003c/h3\u003e\u003cp\u003e这是题目描述\u003c/p\u003e\u003ch3\u003e输入\u003c/h3\u003e\u003cp\u003e输入说明\u003c/p\u003e\u003ch3\u003e输出\u003c/h3\u003e\u003cp\u003e输出说明\u003c/p\u003e",
+    "difficulty": "Easy",
+    "time_limit": 1000,
+    "memory_limit": 65536,
+    "created_at": "2025-02-27T19:55:57.734828+08:00"
+  }
+}

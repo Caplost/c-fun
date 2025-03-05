@@ -1,0 +1,66 @@
+{
+  "1": [
+    {
+      "id": 1,
+      "problem_id": 1,
+      "input": "4 9\n2 7 11 15",
+      "output": "0 1",
+      "is_example": true
+    },
+    {
+      "id": 2,
+      "problem_id": 1,
+      "input": "3 6\n3 2 4",
+      "output": "1 2",
+      "is_example": true
+    }
+  ],
+  "2": [
+    {
+      "id": 3,
+      "problem_id": 2,
+      "input": "121",
+      "output": "true",
+      "is_example": true
+    },
+    {
+      "id": 4,
+      "problem_id": 2,
+      "input": "-121",
+      "output": "false",
+      "is_example": true
+    },
+    {
+      "id": 5,
+      "problem_id": 2,
+      "input": "10",
+      "output": "false",
+      "is_example": true
+    }
+  ],
+  "3": [
+    {
+      "id": 6,
+      "problem_id": 3,
+      "input": "1 2 4\n1 3 4",
+      "output": "1 1 2 3 4 4",
+      "is_example": true
+    },
+    {
+      "id": 7,
+      "problem_id": 3,
+      "input": "\n0",
+      "output": "0",
+      "is_example": true
+    }
+  ],
+  "5": [
+    {
+      "id": 8,
+      "problem_id": 5,
+      "input": "测试输入",
+      "output": "测试输出",
+      "is_example": true
+    }
+  ]
+}
