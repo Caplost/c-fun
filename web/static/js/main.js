@@ -1079,12 +1079,20 @@ function displayGeneratedProblem(problem) {
     document.getElementById('generateProgress').style.display = 'none';
     document.getElementById('generatedProblemResult').style.display = 'block';
     
-    // 设置题目信息
-    document.getElementById('generatedProblemTitle').textContent = problem.title;
-    document.getElementById('previewTitle').textContent = problem.title;
-    document.getElementById('previewDifficulty').textContent = problem.difficulty;
-    document.getElementById('previewLimits').textContent = `时间限制: ${problem.time_limit}ms, 内存限制: ${problem.memory_limit}KB`;
-    document.getElementById('previewDescription').innerHTML = problem.description.replace(/\n/g, '<br>');
+    console.log('显示生成的题目:', problem);
+    
+    // 检查并设置题目信息
+    document.getElementById('generatedProblemTitle').textContent = problem.title || '未命名题目';
+    document.getElementById('previewTitle').textContent = problem.title || '未命名题目';
+    document.getElementById('previewDifficulty').textContent = problem.difficulty || 'Medium';
+    document.getElementById('previewLimits').textContent = `时间限制: ${problem.time_limit || 1000}ms, 内存限制: ${problem.memory_limit || (256 * 1024)}KB`;
+    
+    // 确保描述存在并正确显示
+    if (problem.description && problem.description.trim() !== '') {
+        document.getElementById('previewDescription').innerHTML = problem.description.replace(/\n/g, '<br>');
+    } else {
+        document.getElementById('previewDescription').innerHTML = '<span class="text-warning">注意: 题目描述为空，请手动添加描述。</span>';
+    }
     
     // 示例
     let examplesHtml = '';
@@ -1111,14 +1119,25 @@ function displayGeneratedProblem(problem) {
             }
         });
     }
+    
+    if (examplesHtml === '') {
+        examplesHtml = '<div class="alert alert-warning">无示例测试用例</div>';
+    }
+    
     document.getElementById('previewExamples').innerHTML = examplesHtml;
     
     // 知识点标签
     let tagsHtml = '';
     if (problem.knowledge_tag && problem.knowledge_tag.length > 0) {
         tagsHtml = problem.knowledge_tag.map(tag => `<span class="badge bg-secondary me-1">${tag}</span>`).join('');
+    } else {
+        tagsHtml = '<span class="text-muted">无知识点标签</span>';
     }
     document.getElementById('previewTags').innerHTML = tagsHtml;
+    
+    // 启用保存按钮
+    document.getElementById('saveGeneratedProblemBtn').disabled = false;
+    document.getElementById('generateModalFooter').style.display = 'flex';
 }
 
 // 保存生成的题目

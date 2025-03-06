@@ -37,24 +37,72 @@ type GeneratedProblem struct {
 
 // ParseGeneratedProblem 从LLM输出解析出生成的题目
 func ParseGeneratedProblem(content string) (*GeneratedProblem, error) {
+	log.Printf("开始解析生成的问题，内容长度: %d", len(content))
+
 	// 尝试直接解析JSON格式的输出
 	var problem GeneratedProblem
 	err := json.Unmarshal([]byte(content), &problem)
 	if err == nil && problem.Title != "" {
+		log.Printf("成功直接解析JSON: 标题=%s, 描述长度=%d", problem.Title, len(problem.Description))
 		return &problem, nil
 	}
 
-	// 如果直接解析失败，尝试从文本中提取JSON部分
+	log.Printf("直接JSON解析失败: %v, 尝试提取JSON部分", err)
+
+	// 尝试查找并提取JSON部分
 	jsonStart := strings.Index(content, "{")
 	jsonEnd := strings.LastIndex(content, "}")
 	if jsonStart >= 0 && jsonEnd > jsonStart {
 		jsonStr := content[jsonStart : jsonEnd+1]
+		log.Printf("找到JSON部分，长度: %d", len(jsonStr))
+
 		err = json.Unmarshal([]byte(jsonStr), &problem)
 		if err == nil && problem.Title != "" {
+			log.Printf("成功解析提取的JSON: 标题=%s, 描述长度=%d", problem.Title, len(problem.Description))
 			return &problem, nil
 		}
+		log.Printf("解析提取的JSON失败: %v", err)
+
+		// 尝试不同的JSON结构
+		var alternateFormat struct {
+			Title             string            `json:"title"`
+			Description       string            `json:"description"`
+			Difficulty        string            `json:"difficulty"`
+			TimeLimit         int               `json:"time_limit"`
+			MemoryLimit       int               `json:"memory_limit"`
+			KnowledgeTag      []string          `json:"knowledge_tag"`
+			TestCases         []models.TestCase `json:"test_cases"`
+			ReferenceSolution string            `json:"reference_solution"`
+			ThinkingAnalysis  string            `json:"thinking_analysis"`
+		}
+
+		err = json.Unmarshal([]byte(jsonStr), &alternateFormat)
+		if err == nil && alternateFormat.Title != "" {
+			log.Printf("成功解析替代JSON格式: 标题=%s, 描述长度=%d", alternateFormat.Title, len(alternateFormat.Description))
+
+			// 手动构建GeneratedProblem结构
+			problem = GeneratedProblem{
+				Problem: models.Problem{
+					Title:        alternateFormat.Title,
+					Description:  alternateFormat.Description,
+					Difficulty:   alternateFormat.Difficulty,
+					TimeLimit:    alternateFormat.TimeLimit,
+					MemoryLimit:  alternateFormat.MemoryLimit,
+					KnowledgeTag: alternateFormat.KnowledgeTag,
+					CreatedAt:    time.Now(),
+					UpdatedAt:    time.Now(),
+				},
+				TestCases:         alternateFormat.TestCases,
+				ReferenceSolution: alternateFormat.ReferenceSolution,
+				ThinkingAnalysis:  alternateFormat.ThinkingAnalysis,
+			}
+
+			return &problem, nil
+		}
+		log.Printf("解析替代JSON格式失败: %v", err)
 	}
 
+	log.Printf("尝试解析结构化文本")
 	// 如果仍无法解析，尝试解析结构化文本
 	return parseStructuredText(content)
 }
@@ -72,16 +120,16 @@ func parseStructuredText(content string) (*GeneratedProblem, error) {
 	sections := splitIntoSections(content)
 
 	// 解析标题
-	if title, ok := sections["标题"]; ok || title != "" {
+	if title, ok := sections["标题"]; ok && title != "" {
 		problem.Title = strings.TrimSpace(title)
 	} else {
 		return nil, fmt.Errorf("无法解析题目标题")
 	}
 
 	// 解析描述
-	if desc, ok := sections["描述"]; ok || desc != "" {
+	if desc, ok := sections["描述"]; ok && desc != "" {
 		problem.Description = strings.TrimSpace(desc)
-	} else if desc, ok := sections["题目描述"]; ok || desc != "" {
+	} else if desc, ok := sections["题目描述"]; ok && desc != "" {
 		problem.Description = strings.TrimSpace(desc)
 	} else {
 		return nil, fmt.Errorf("无法解析题目描述")
@@ -156,21 +204,55 @@ func splitIntoSections(content string) map[string]string {
 	currentSection := ""
 	currentContent := []string{}
 
-	for _, line := range lines {
+	log.Printf("开始分析响应内容，总行数: %d", len(lines))
+
+	for i, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 
 		// 检查是否为新章节
-		if strings.HasPrefix(line, "#") || (len(line) > 2 && (strings.HasPrefix(line, "标题:") || strings.HasPrefix(line, "描述:") ||
-			strings.HasPrefix(line, "难度:") || strings.HasPrefix(line, "时间限制:") || strings.HasPrefix(line, "内存限制:") ||
-			strings.HasPrefix(line, "知识点:") || strings.HasPrefix(line, "测试用例:") || strings.HasPrefix(line, "参考解答:") ||
-			strings.HasPrefix(line, "思维训练分析:"))) {
+		isNewSection := false
 
+		// 检查常见的章节标记
+		if strings.HasPrefix(line, "#") {
+			isNewSection = true
+		} else if strings.HasPrefix(line, "标题:") || strings.HasPrefix(line, "题目标题:") {
+			line = "标题"
+			isNewSection = true
+		} else if strings.HasPrefix(line, "描述:") || strings.HasPrefix(line, "题目描述:") {
+			line = "描述"
+			isNewSection = true
+		} else if strings.HasPrefix(line, "难度:") || strings.HasPrefix(line, "题目难度:") {
+			line = "难度"
+			isNewSection = true
+		} else if strings.HasPrefix(line, "时间限制:") {
+			line = "时间限制"
+			isNewSection = true
+		} else if strings.HasPrefix(line, "内存限制:") {
+			line = "内存限制"
+			isNewSection = true
+		} else if strings.HasPrefix(line, "知识点:") || strings.HasPrefix(line, "标签:") {
+			line = "知识点"
+			isNewSection = true
+		} else if strings.HasPrefix(line, "测试用例:") || strings.HasPrefix(line, "样例:") {
+			line = "测试用例"
+			isNewSection = true
+		} else if strings.HasPrefix(line, "参考解答:") || strings.HasPrefix(line, "解答:") {
+			line = "参考解答"
+			isNewSection = true
+		} else if strings.HasPrefix(line, "思维训练:") || strings.HasPrefix(line, "思维训练分析:") {
+			line = "思维训练分析"
+			isNewSection = true
+		}
+
+		if isNewSection {
 			// 保存之前的章节
 			if currentSection != "" && len(currentContent) > 0 {
-				sections[currentSection] = strings.Join(currentContent, "\n")
+				sectionContent := strings.Join(currentContent, "\n")
+				log.Printf("找到章节 '%s', 内容长度: %d", currentSection, len(sectionContent))
+				sections[currentSection] = sectionContent
 				currentContent = []string{}
 			}
 
@@ -182,24 +264,29 @@ func splitIntoSections(content string) map[string]string {
 				}
 			} else {
 				parts := strings.SplitN(line, ":", 2)
-				if len(parts) > 1 {
-					currentSection = strings.TrimSpace(parts[0])
-					if len(parts[1]) > 0 {
-						currentContent = append(currentContent, strings.TrimSpace(parts[1]))
-					}
+				currentSection = strings.TrimSpace(parts[0])
+				if len(parts) > 1 && parts[1] != "" {
+					currentContent = append(currentContent, strings.TrimSpace(parts[1]))
 				}
 			}
+
+			log.Printf("行 %d: 新章节开始: %s", i+1, currentSection)
 		} else {
-			// 添加到当前章节内容
-			if currentSection != "" {
-				currentContent = append(currentContent, line)
-			}
+			// 添加到当前章节
+			currentContent = append(currentContent, line)
 		}
 	}
 
 	// 保存最后一个章节
 	if currentSection != "" && len(currentContent) > 0 {
-		sections[currentSection] = strings.Join(currentContent, "\n")
+		sectionContent := strings.Join(currentContent, "\n")
+		log.Printf("找到章节 '%s', 内容长度: %d", currentSection, len(sectionContent))
+		sections[currentSection] = sectionContent
+	}
+
+	// 输出所有找到的章节
+	for section := range sections {
+		log.Printf("解析完成，章节: %s", section)
 	}
 
 	return sections
