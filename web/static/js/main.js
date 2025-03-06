@@ -660,3 +660,503 @@ function formatDateTime(dateStr) {
     const date = new Date(dateStr);
     return date.toLocaleString();
 }
+
+// 显示AI生成题目的模态框
+function showGenerateAIProblemModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'generateAIProblemModal';
+    modal.tabIndex = '-1';
+    modal.setAttribute('aria-labelledby', 'generateAIProblemModalLabel');
+    modal.setAttribute('aria-hidden', 'true');
+    
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="generateAIProblemModalLabel">AI生成题目</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="generateAIProblemForm">
+                        <div class="mb-3">
+                            <label for="aiModelSelect" class="form-label">选择AI模型</label>
+                            <select class="form-select" id="aiModelSelect">
+                                <option value="openai">OpenAI (GPT-4o)</option>
+                                <option value="deepseek">DeepSeek Coder</option>
+                                <option value="deepseek_silicon">DeepSeek Silicon</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="generateTitle" class="form-label">题目主题/名称 (可选)</label>
+                            <input type="text" class="form-control" id="generateTitle" placeholder="例如：数组排序、二叉树遍历...">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="outlineSection" class="form-label">大纲章节</label>
+                            <select class="form-select" id="outlineSection">
+                                <optgroup label="入门级">
+                                    <option value="2.1.1">2.1.1 基础知识与编程环境</option>
+                                    <option value="2.1.2">2.1.2 C++程序设计</option>
+                                    <option value="2.1.3">2.1.3 数据结构</option>
+                                    <option value="2.1.4">2.1.4 算法</option>
+                                    <option value="2.1.5">2.1.5 数学与其他</option>
+                                </optgroup>
+                                <optgroup label="提高级">
+                                    <option value="2.2.1">2.2.1 基础知识与编程环境</option>
+                                    <option value="2.2.2">2.2.2 C++程序设计</option>
+                                    <option value="2.2.3">2.2.3 数据结构</option>
+                                    <option value="2.2.4">2.2.4 算法</option>
+                                    <option value="2.2.5">2.2.5 数学与其他</option>
+                                </optgroup>
+                                <optgroup label="NOI级">
+                                    <option value="2.3.1">2.3.1 C++程序设计</option>
+                                    <option value="2.3.2">2.3.2 数据结构</option>
+                                    <option value="2.3.3">2.3.3 算法</option>
+                                    <option value="2.3.4">2.3.4 数学与其他</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">知识点</label>
+                            <div class="mb-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshKnowledgePoints">刷新知识点</button>
+                            </div>
+                            <div id="knowledgePointsContainer" class="border p-2" style="max-height: 200px; overflow-y: auto;">
+                                <div class="d-flex justify-content-center">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span class="ms-2">加载知识点中...</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">难度</label>
+                            <select class="form-select" id="generateDifficulty">
+                                <option value="Easy">简单</option>
+                                <option value="Medium" selected>中等</option>
+                                <option value="Hard">困难</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">题目类型</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="problemType" id="typeAlgorithm" value="Algorithm" checked>
+                                <label class="form-check-label" for="typeAlgorithm">算法题</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="problemType" id="typeDataStructure" value="DataStructure">
+                                <label class="form-check-label" for="typeDataStructure">数据结构题</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="problemType" id="typeMath" value="Math">
+                                <label class="form-check-label" for="typeMath">数学题</label>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="timeComplexity" class="form-label">时间复杂度要求</label>
+                                <input type="text" class="form-control" id="timeComplexity" placeholder="例如：O(n)、O(n log n)...">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="spaceComplexity" class="form-label">空间复杂度要求</label>
+                                <input type="text" class="form-control" id="spaceComplexity" placeholder="例如：O(n)、O(1)...">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="additionalReqs" class="form-label">附加要求 (可选)</label>
+                            <textarea class="form-control" id="additionalReqs" rows="3" placeholder="例如：要求使用某种特定算法、限制不能使用某些库函数、输入规模范围..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="testCaseCount" class="form-label">测试用例数量</label>
+                            <input type="number" class="form-control" id="testCaseCount" min="1" max="20" value="5">
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="includeReferenceSolution" checked>
+                            <label class="form-check-label" for="includeReferenceSolution">生成参考解答</label>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="includeAnalysis" checked>
+                            <label class="form-check-label" for="includeAnalysis">生成思维分析</label>
+                        </div>
+                    </form>
+                    
+                    <div id="generateProgress" style="display: none;">
+                        <div class="d-flex justify-content-center align-items-center flex-column">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">生成中...</span>
+                            </div>
+                            <p class="mt-2">AI正在生成题目，请稍候...</p>
+                            <p class="text-muted small">根据题目复杂度，可能需要10-60秒</p>
+                        </div>
+                    </div>
+                    
+                    <div id="generatedProblemResult" style="display: none;">
+                        <div class="alert alert-success">
+                            <h5 class="alert-heading">题目生成成功！</h5>
+                            <p id="generatedProblemTitle"></p>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">题目预览</div>
+                            <div class="card-body">
+                                <h5 id="previewTitle"></h5>
+                                <div class="mb-2">
+                                    <span class="badge bg-primary me-1" id="previewDifficulty"></span>
+                                    <span class="text-muted" id="previewLimits"></span>
+                                </div>
+                                <div id="previewDescription"></div>
+                                <h6 class="mt-3">示例:</h6>
+                                <div id="previewExamples"></div>
+                                <h6 class="mt-3">知识点:</h6>
+                                <div id="previewTags"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" id="saveGeneratedProblemBtn">保存到题库</button>
+                            <button class="btn btn-outline-secondary" id="regenerateProblemBtn">重新生成</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" id="generateModalFooter">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="startGenerateBtn">生成题目</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 移除现有的模态框（如果有）
+    const existingModal = document.getElementById('generateAIProblemModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // 添加新的模态框
+    document.body.appendChild(modal);
+    
+    // 初始化Bootstrap模态框
+    const generateModal = new bootstrap.Modal(modal);
+    generateModal.show();
+    
+    // 加载知识点
+    loadKnowledgePoints();
+    
+    // 添加刷新知识点按钮事件监听器
+    const refreshKnowledgePointsBtn = document.getElementById('refreshKnowledgePoints');
+    if (refreshKnowledgePointsBtn) {
+        refreshKnowledgePointsBtn.addEventListener('click', () => {
+            loadKnowledgePoints();
+        });
+    }
+    
+    // 添加大纲章节变更事件监听
+    const outlineSection = document.getElementById('outlineSection');
+    if (outlineSection) {
+        outlineSection.addEventListener('change', loadKnowledgePoints);
+    }
+    
+    // 添加开始生成按钮事件监听器
+    const startGenerateBtn = document.getElementById('startGenerateBtn');
+    if (startGenerateBtn) {
+        startGenerateBtn.addEventListener('click', generateAIProblem);
+    }
+    
+    // 添加保存生成题目按钮的事件监听器
+    const saveGeneratedProblemBtn = document.getElementById('saveGeneratedProblemBtn');
+    if (saveGeneratedProblemBtn) {
+        saveGeneratedProblemBtn.addEventListener('click', saveGeneratedProblem);
+    }
+    
+    // 添加重新生成按钮的事件监听器
+    const regenerateProblemBtn = document.getElementById('regenerateProblemBtn');
+    if (regenerateProblemBtn) {
+        regenerateProblemBtn.addEventListener('click', () => {
+            document.getElementById('generateProgress').style.display = 'none';
+            document.getElementById('generatedProblemResult').style.display = 'none';
+            document.getElementById('generateAIProblemForm').style.display = 'block';
+            document.getElementById('generateModalFooter').style.display = 'flex';
+        });
+    }
+}
+
+// 加载知识点
+async function loadKnowledgePoints() {
+    const outlineSection = document.getElementById('outlineSection');
+    const knowledgePointsContainer = document.getElementById('knowledgePointsContainer');
+    
+    if (!outlineSection || !knowledgePointsContainer) {
+        console.error('找不到大纲章节或知识点容器元素');
+        return;
+    }
+    
+    const sectionId = outlineSection.value;
+    knowledgePointsContainer.innerHTML = `
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">加载中...</span>
+            </div>
+            <span class="ms-2">加载知识点中...</span>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch(`/api/outline/knowledge-points?section=${sectionId}`);
+        if (!response.ok) {
+            throw new Error(`获取知识点失败: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data && data.knowledge_points && data.knowledge_points.length > 0) {
+            console.log("成功获取到知识点", data.knowledge_points);
+            const html = data.knowledge_points.map((item, index) => {
+                const difficultyLabel = item.difficulty ? ` <span class="badge bg-info">难度: ${item.difficulty}</span>` : '';
+                const tagsHtml = item.tags && item.tags.length > 0 
+                    ? ` <span class="badge bg-secondary">${item.tags.join(', ')}</span>` 
+                    : '';
+                
+                return `
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="knowledgePoints" value="${item.knowledge}" id="kp${index}">
+                        <label class="form-check-label" for="kp${index}">
+                            ${item.knowledge}${difficultyLabel}${tagsHtml}
+                        </label>
+                    </div>
+                `;
+            }).join('');
+            
+            knowledgePointsContainer.innerHTML = html;
+        } else {
+            console.warn("没有找到知识点，渲染默认值");
+            renderDefaultKnowledgePoints(sectionId);
+        }
+    } catch (error) {
+        console.error('加载知识点失败:', error);
+        renderDefaultKnowledgePoints(sectionId);
+    }
+}
+
+// 渲染默认知识点
+function renderDefaultKnowledgePoints(sectionId) {
+    const knowledgePointsContainer = document.getElementById('knowledgePointsContainer');
+    if (!knowledgePointsContainer) return;
+    
+    let knowledgePoints = [];
+    
+    // 基于章节ID提供默认知识点
+    if (sectionId.startsWith('2.1.1')) {
+        knowledgePoints = ['计算机基本构成', '操作系统基本概念', '编程环境', '编译与运行'];
+    } else if (sectionId.startsWith('2.1.2')) {
+        knowledgePoints = ['变量与常量', '基本数据类型', '条件语句', '循环语句', '数组', '函数', '字符串处理'];
+    } else if (sectionId.startsWith('2.1.3')) {
+        knowledgePoints = ['链表', '栈', '队列', '二叉树', '图'];
+    } else if (sectionId.startsWith('2.1.4')) {
+        knowledgePoints = ['枚举法', '模拟法', '贪心算法', '递归算法', '二分查找', '排序算法', '深度优先搜索', '广度优先搜索', '动态规划'];
+    } else if (sectionId.startsWith('2.1.5')) {
+        knowledgePoints = ['进制转换', '素数', '最大公约数', '组合数学', 'ASCII码'];
+    } else if (sectionId.startsWith('2.2')) {
+        knowledgePoints = ['STL容器', '并查集', '线段树', '最短路算法', '最小生成树', '状态压缩DP'];
+    } else if (sectionId.startsWith('2.3')) {
+        knowledgePoints = ['平衡树', '网络流', '计算几何', '博弈论', '字符串算法'];
+    } else {
+        knowledgePoints = ['算法基础', '数据结构', '数学基础'];
+    }
+    
+    const html = knowledgePoints.map((item, index) => {
+        return `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="knowledgePoints" value="${item}" id="kp${index}">
+                <label class="form-check-label" for="kp${index}">${item}</label>
+            </div>
+        `;
+    }).join('');
+    
+    knowledgePointsContainer.innerHTML = html;
+}
+
+// 生成AI题目
+async function generateAIProblem() {
+    // 获取表单数据
+    const aiModel = document.getElementById('aiModelSelect').value;
+    const title = document.getElementById('generateTitle').value;
+    const outlineSection = document.getElementById('outlineSection').value;
+    const difficultySelect = document.getElementById('generateDifficulty');
+    const difficulty = difficultySelect.value;
+    
+    // 获取选中的知识点
+    const knowledgePoints = [];
+    document.querySelectorAll('input[name="knowledgePoints"]:checked').forEach(item => {
+        knowledgePoints.push(item.value);
+    });
+    
+    // 获取题目类型
+    const problemType = document.querySelector('input[name="problemType"]:checked').value;
+    
+    // 其他设置
+    const timeComplexity = document.getElementById('timeComplexity').value;
+    const spaceComplexity = document.getElementById('spaceComplexity').value;
+    const additionalReqs = document.getElementById('additionalReqs').value;
+    const testCaseCount = parseInt(document.getElementById('testCaseCount').value) || 5;
+    const includeReferenceSolution = document.getElementById('includeReferenceSolution').checked;
+    const includeAnalysis = document.getElementById('includeAnalysis').checked;
+    
+    // 验证
+    if (knowledgePoints.length === 0) {
+        alert('请至少选择一个知识点');
+        return;
+    }
+    
+    // 准备请求数据
+    const requestData = {
+        title: title,
+        outline_section: outlineSection,
+        knowledge_points: knowledgePoints,
+        difficulty: difficulty,
+        problem_type: problemType,
+        time_complexity: timeComplexity,
+        space_complexity: spaceComplexity,
+        additional_reqs: additionalReqs,
+        test_case_count: testCaseCount,
+        include_reference_solution: includeReferenceSolution,
+        include_analysis: includeAnalysis,
+        model: aiModel
+    };
+    
+    console.log('生成题目请求数据:', requestData);
+    
+    // 显示进度，隐藏表单
+    document.getElementById('generateAIProblemForm').style.display = 'none';
+    document.getElementById('generateProgress').style.display = 'block';
+    document.getElementById('generateModalFooter').style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/problems/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`生成题目失败: ${response.statusText}`);
+        }
+        
+        const generatedProblem = await response.json();
+        console.log('生成的题目:', generatedProblem);
+        
+        // 存储生成的题目到全局变量，以便后续保存使用
+        window.generatedProblem = generatedProblem;
+        
+        // 显示生成结果
+        displayGeneratedProblem(generatedProblem);
+    } catch (error) {
+        console.error('生成题目失败:', error);
+        alert(`生成题目失败: ${error.message}`);
+        
+        // 恢复表单显示
+        document.getElementById('generateProgress').style.display = 'none';
+        document.getElementById('generateAIProblemForm').style.display = 'block';
+        document.getElementById('generateModalFooter').style.display = 'flex';
+    }
+}
+
+// 显示生成的题目
+function displayGeneratedProblem(problem) {
+    // 隐藏加载中显示，显示结果
+    document.getElementById('generateProgress').style.display = 'none';
+    document.getElementById('generatedProblemResult').style.display = 'block';
+    
+    // 设置题目信息
+    document.getElementById('generatedProblemTitle').textContent = problem.title;
+    document.getElementById('previewTitle').textContent = problem.title;
+    document.getElementById('previewDifficulty').textContent = problem.difficulty;
+    document.getElementById('previewLimits').textContent = `时间限制: ${problem.time_limit}ms, 内存限制: ${problem.memory_limit}KB`;
+    document.getElementById('previewDescription').innerHTML = problem.description.replace(/\n/g, '<br>');
+    
+    // 示例
+    let examplesHtml = '';
+    if (problem.test_cases && problem.test_cases.length > 0) {
+        problem.test_cases.forEach((tc, index) => {
+            if (tc.is_example) {
+                examplesHtml += `
+                    <div class="card mb-2">
+                        <div class="card-header">样例 ${index + 1}</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>输入:</strong>
+                                    <pre>${tc.input}</pre>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>输出:</strong>
+                                    <pre>${tc.output}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    }
+    document.getElementById('previewExamples').innerHTML = examplesHtml;
+    
+    // 知识点标签
+    let tagsHtml = '';
+    if (problem.knowledge_tag && problem.knowledge_tag.length > 0) {
+        tagsHtml = problem.knowledge_tag.map(tag => `<span class="badge bg-secondary me-1">${tag}</span>`).join('');
+    }
+    document.getElementById('previewTags').innerHTML = tagsHtml;
+}
+
+// 保存生成的题目
+async function saveGeneratedProblem() {
+    if (!window.generatedProblem) {
+        alert('没有可保存的题目');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/problems/save-generated', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(window.generatedProblem)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`保存题目失败: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        console.log('保存题目结果:', result);
+        
+        // 关闭模态框
+        const generateModal = bootstrap.Modal.getInstance(document.getElementById('generateAIProblemModal'));
+        if (generateModal) {
+            generateModal.hide();
+        }
+        
+        // 刷新题目列表
+        loadProblems();
+        
+        // 显示成功消息
+        alert(`题目"${window.generatedProblem.title}"已成功保存到题库！`);
+    } catch (error) {
+        console.error('保存题目失败:', error);
+        alert(`保存题目失败: ${error.message}`);
+    }
+}
