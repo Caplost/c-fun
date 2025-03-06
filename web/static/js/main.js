@@ -1031,7 +1031,7 @@ async function generateAIProblem() {
         test_case_count: testCaseCount,
         include_reference_solution: includeReferenceSolution,
         include_analysis: includeAnalysis,
-        model: aiModel
+        model_type: aiModel
     };
     
     console.log('生成题目请求数据:', requestData);
