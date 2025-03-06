@@ -215,10 +215,13 @@ async function loadProblemDetail(problemId) {
             throw new Error(`加载题目详情失败 (${response.status})`);
         }
         
-        const problem = await response.json();
+        const data = await response.json();
         
-        // 显示题目详情（这里可以根据需要实现具体的显示逻辑）
-        showProblemDetail(problem);
+        // 记录完整的响应对象，用于调试
+        console.log('API响应数据:', data);
+        
+        // 显示题目详情（这里应该传递data，而不仅仅是problem）
+        showProblemDetail(data);
     } catch (error) {
         console.error('加载题目详情失败:', error);
         alert(`加载题目详情失败: ${error.message}`);
@@ -226,9 +229,16 @@ async function loadProblemDetail(problemId) {
 }
 
 // 显示题目详情
-function showProblemDetail(problem) {
+function showProblemDetail(data) {
     // 记录问题对象以便调试
-    console.log('问题对象:', problem);
+    console.log('完整数据对象:', data);
+    
+    // 从响应中获取problem对象和examples数组
+    const problem = data.problem || {};
+    const examples = data.examples || [];
+    
+    // 调试问题详情
+    logProblemDetails(problem, examples);
     
     // 安全地获取属性，防止undefined错误
     const title = problem.title || '未命名题目';
@@ -236,6 +246,10 @@ function showProblemDetail(problem) {
     const timeLimit = problem.time_limit || 1000;
     const memoryLimit = problem.memory_limit || 65536;
     const description = problem.description || '无题目描述';
+    
+    // 检查是否有参考解答和思维分析
+    const referenceSolution = problem.reference_solution || '';
+    const thinkingAnalysis = problem.thinking_analysis || '';
     
     // 创建模态框显示题目详情
     const modal = document.createElement('div');
@@ -266,13 +280,43 @@ function showProblemDetail(problem) {
                     
                     <h6>样例:</h6>
                     <div class="examples mb-3">
-                        ${renderExamples(problem)}
+                        ${renderExamples(examples)}
                     </div>
                     
                     <h6>知识点:</h6>
                     <div class="knowledge-tags mb-3">
                         ${renderKnowledgeTags(problem)}
                     </div>
+                    
+                    ${referenceSolution ? `
+                    <div class="mb-3">
+                        <button class="btn btn-outline-primary w-100 text-start" type="button" 
+                                data-bs-toggle="collapse" data-bs-target="#collapseReferenceSolution" 
+                                aria-expanded="false" aria-controls="collapseReferenceSolution">
+                            <i class="bi bi-code-square"></i> 参考解答 <span class="small text-muted">(点击展开)</span>
+                        </button>
+                        <div class="collapse mt-2" id="collapseReferenceSolution">
+                            <div class="card card-body">
+                                <pre>${referenceSolution.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${thinkingAnalysis ? `
+                    <div class="mb-3">
+                        <button class="btn btn-outline-info w-100 text-start" type="button" 
+                                data-bs-toggle="collapse" data-bs-target="#collapseThinkingAnalysis" 
+                                aria-expanded="false" aria-controls="collapseThinkingAnalysis">
+                            <i class="bi bi-lightbulb"></i> 思维分析 <span class="small text-muted">(点击展开)</span>
+                        </button>
+                        <div class="collapse mt-2" id="collapseThinkingAnalysis">
+                            <div class="card card-body">
+                                ${thinkingAnalysis.replace(/\n/g, '<br>')}
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
                     
                     <h6>提交代码:</h6>
                     <div class="code-submission">
@@ -308,40 +352,15 @@ function showProblemDetail(problem) {
 }
 
 // 渲染题目样例
-function renderExamples(problem) {
-    // 检查problem.examples是否存在
-    if (!problem.examples || !Array.isArray(problem.examples) || problem.examples.length === 0) {
-        // 尝试从test_cases中找到is_example为true的测试用例
-        if (problem.test_cases && Array.isArray(problem.test_cases)) {
-            const exampleCases = problem.test_cases.filter(tc => tc.is_example);
-            if (exampleCases.length > 0) {
-                let examplesHtml = '';
-                exampleCases.forEach((example, index) => {
-                    examplesHtml += `
-                        <div class="example mb-3">
-                            <h6>样例 ${index + 1}:</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6>输入:</h6>
-                                    <pre>${example.input || ''}</pre>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6>输出:</h6>
-                                    <pre>${example.output || ''}</pre>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                return examplesHtml;
-            }
-        }
+function renderExamples(examples) {
+    // 检查examples是否存在且非空
+    if (!examples || !Array.isArray(examples) || examples.length === 0) {
         return '<p>无样例</p>';
     }
     
     let examplesHtml = '';
     
-    problem.examples.forEach((example, index) => {
+    examples.forEach((example, index) => {
         examplesHtml += `
             <div class="example mb-3">
                 <h6>样例 ${index + 1}:</h6>
@@ -682,9 +701,9 @@ function showGenerateAIProblemModal() {
                         <div class="mb-3">
                             <label for="aiModelSelect" class="form-label">选择AI模型</label>
                             <select class="form-select" id="aiModelSelect">
-                                <option value="openai">OpenAI (GPT-4o)</option>
-                                <option value="deepseek">DeepSeek Coder</option>
+                                <option value="deepseek" selected>DeepSeek R1</option>
                                 <option value="deepseek_silicon">DeepSeek Silicon</option>
+                                <option value="openai">OpenAI (GPT-4o)</option>
                             </select>
                         </div>
                         
@@ -721,10 +740,11 @@ function showGenerateAIProblemModal() {
                         
                         <div class="mb-3">
                             <label class="form-label">知识点</label>
-                            <div class="mb-2">
+                            <div class="mb-2 d-flex justify-content-between">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshKnowledgePoints">刷新知识点</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="toggleAllKnowledgePoints">全选/取消全选</button>
                             </div>
-                            <div id="knowledgePointsContainer" class="border p-2" style="max-height: 200px; overflow-y: auto;">
+                            <div id="knowledgePointsContainer" class="border p-2" style="max-height: 300px; overflow-y: auto;">
                                 <div class="d-flex justify-content-center">
                                     <div class="spinner-border spinner-border-sm" role="status">
                                         <span class="visually-hidden">Loading...</span>
@@ -781,12 +801,12 @@ function showGenerateAIProblemModal() {
                         </div>
                         
                         <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="includeReferenceSolution" checked>
+                            <input type="checkbox" class="form-check-input" id="includeReferenceSolution" checked disabled>
                             <label class="form-check-label" for="includeReferenceSolution">生成参考解答</label>
                         </div>
                         
                         <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="includeAnalysis" checked>
+                            <input type="checkbox" class="form-check-input" id="includeAnalysis" checked disabled>
                             <label class="form-check-label" for="includeAnalysis">生成思维分析</label>
                         </div>
                     </form>
@@ -867,6 +887,12 @@ function showGenerateAIProblemModal() {
         outlineSection.addEventListener('change', loadKnowledgePoints);
     }
     
+    // 添加全选/取消全选按钮的事件监听
+    const toggleAllKnowledgePointsBtn = document.getElementById('toggleAllKnowledgePoints');
+    if (toggleAllKnowledgePointsBtn) {
+        toggleAllKnowledgePointsBtn.addEventListener('click', toggleAllKnowledgePoints);
+    }
+    
     // 添加开始生成按钮事件监听器
     const startGenerateBtn = document.getElementById('startGenerateBtn');
     if (startGenerateBtn) {
@@ -921,21 +947,47 @@ async function loadKnowledgePoints() {
         
         if (data && data.knowledge_points && data.knowledge_points.length > 0) {
             console.log("成功获取到知识点", data.knowledge_points);
-            const html = data.knowledge_points.map((item, index) => {
-                const difficultyLabel = item.difficulty ? ` <span class="badge bg-info">难度: ${item.difficulty}</span>` : '';
-                const tagsHtml = item.tags && item.tags.length > 0 
-                    ? ` <span class="badge bg-secondary">${item.tags.join(', ')}</span>` 
-                    : '';
+            
+            // 按知识点显示，分类整理
+            const knowledgeGroups = {};
+            
+            // 分组整理知识点
+            data.knowledge_points.forEach(item => {
+                // 使用子标题作为分组键
+                const groupKey = item.title || '其他';
+                if (!knowledgeGroups[groupKey]) {
+                    knowledgeGroups[groupKey] = [];
+                }
+                knowledgeGroups[groupKey].push(item);
+            });
+            
+            // 生成HTML
+            let html = '';
+            for (const [groupName, items] of Object.entries(knowledgeGroups)) {
+                html += `<div class="knowledge-group mb-3">
+                            <div class="knowledge-group-header mb-2 fw-bold">${groupName}</div>
+                            <div class="knowledge-group-items">`;
+                            
+                items.forEach((item, index) => {
+                    const difficultyLabel = item.difficulty ? 
+                        ` <span class="badge bg-info">难度: ${item.difficulty}</span>` : '';
+                    const tagsHtml = item.tags && item.tags.length > 0 ? 
+                        ` <span class="badge bg-secondary">${item.tags.join(', ')}</span>` : '';
+                    
+                    html += `
+                        <div class="form-check">
+                            <input class="form-check-input knowledge-point-checkbox" 
+                                type="checkbox" name="knowledgePoints" 
+                                value="${item.knowledge}" id="kp${index}-${groupName.replace(/\s+/g, '-')}">
+                            <label class="form-check-label" for="kp${index}-${groupName.replace(/\s+/g, '-')}">
+                                ${item.knowledge}${difficultyLabel}${tagsHtml}
+                            </label>
+                        </div>
+                    `;
+                });
                 
-                return `
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="knowledgePoints" value="${item.knowledge}" id="kp${index}">
-                        <label class="form-check-label" for="kp${index}">
-                            ${item.knowledge}${difficultyLabel}${tagsHtml}
-                        </label>
-                    </div>
-                `;
-            }).join('');
+                html += `</div></div>`;
+            }
             
             knowledgePointsContainer.innerHTML = html;
         } else {
@@ -948,46 +1000,101 @@ async function loadKnowledgePoints() {
     }
 }
 
+// 全选/取消全选知识点
+function toggleAllKnowledgePoints() {
+    const checkboxes = document.querySelectorAll('input.knowledge-point-checkbox[name="knowledgePoints"]');
+    
+    // 检查是否至少有一个未选中
+    const hasUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+    
+    // 根据当前状态切换选择
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = hasUnchecked;
+    });
+}
+
 // 渲染默认知识点
 function renderDefaultKnowledgePoints(sectionId) {
     const knowledgePointsContainer = document.getElementById('knowledgePointsContainer');
     if (!knowledgePointsContainer) return;
     
-    let knowledgePoints = [];
+    let knowledgeGroups = {};
     
     // 基于章节ID提供默认知识点
     if (sectionId.startsWith('2.1.1')) {
-        knowledgePoints = ['计算机基本构成', '操作系统基本概念', '编程环境', '编译与运行'];
+        knowledgeGroups = {
+            '计算机基础': ['计算机基本构成', '操作系统基本概念', '计算机网络基础'],
+            '编程环境': ['编程环境', '编译与运行', 'IDE使用']
+        };
     } else if (sectionId.startsWith('2.1.2')) {
-        knowledgePoints = ['变量与常量', '基本数据类型', '条件语句', '循环语句', '数组', '函数', '字符串处理'];
+        knowledgeGroups = {
+            '基础语法': ['变量与常量', '基本数据类型', '条件语句', '循环语句'],
+            '数据处理': ['数组', '函数', '字符串处理', 'STL基础']
+        };
     } else if (sectionId.startsWith('2.1.3')) {
-        knowledgePoints = ['链表', '栈', '队列', '二叉树', '图'];
+        knowledgeGroups = {
+            '线性结构': ['链表', '栈', '队列'], 
+            '树结构': ['二叉树', '二叉搜索树'], 
+            '图结构': ['图的表示', '图的遍历']
+        };
     } else if (sectionId.startsWith('2.1.4')) {
-        knowledgePoints = ['枚举法', '模拟法', '贪心算法', '递归算法', '二分查找', '排序算法', '深度优先搜索', '广度优先搜索', '动态规划'];
+        knowledgeGroups = {
+            '基础算法': ['枚举法', '模拟法', '贪心算法', '递归算法'],
+            '查找排序': ['二分查找', '排序算法'],
+            '搜索与DP': ['深度优先搜索', '广度优先搜索', '动态规划']
+        };
     } else if (sectionId.startsWith('2.1.5')) {
-        knowledgePoints = ['进制转换', '素数', '最大公约数', '组合数学', 'ASCII码'];
+        knowledgeGroups = {
+            '基础数学': ['进制转换', '素数', '最大公约数', '组合数学', 'ASCII码']
+        };
     } else if (sectionId.startsWith('2.2')) {
-        knowledgePoints = ['STL容器', '并查集', '线段树', '最短路算法', '最小生成树', '状态压缩DP'];
+        knowledgeGroups = {
+            '高级数据结构': ['STL容器', '并查集', '线段树'],
+            '图论算法': ['最短路算法', '最小生成树'],
+            '动态规划': ['状态压缩DP', '区间DP', '树形DP']
+        };
     } else if (sectionId.startsWith('2.3')) {
-        knowledgePoints = ['平衡树', '网络流', '计算几何', '博弈论', '字符串算法'];
+        knowledgeGroups = {
+            '高级数据结构': ['平衡树', '字典树', '哈希表'],
+            '图论高级算法': ['网络流', '二分图匹配'],
+            '高级算法': ['计算几何', '博弈论', '字符串算法']
+        };
     } else {
-        knowledgePoints = ['算法基础', '数据结构', '数学基础'];
+        knowledgeGroups = {
+            '基础': ['算法基础', '数据结构', '数学基础']
+        };
     }
     
-    const html = knowledgePoints.map((item, index) => {
-        return `
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="knowledgePoints" value="${item}" id="kp${index}">
-                <label class="form-check-label" for="kp${index}">${item}</label>
-            </div>
-        `;
-    }).join('');
+    // 生成HTML
+    let html = '';
+    for (const [groupName, items] of Object.entries(knowledgeGroups)) {
+        html += `<div class="knowledge-group mb-3">
+                    <div class="knowledge-group-header mb-2 fw-bold">${groupName}</div>
+                    <div class="knowledge-group-items">`;
+                    
+        items.forEach((item, index) => {
+            html += `
+                <div class="form-check">
+                    <input class="form-check-input knowledge-point-checkbox" 
+                        type="checkbox" name="knowledgePoints" 
+                        value="${item}" id="kp${index}-${groupName.replace(/\s+/g, '-')}">
+                    <label class="form-check-label" for="kp${index}-${groupName.replace(/\s+/g, '-')}">
+                        ${item}
+                    </label>
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    }
     
     knowledgePointsContainer.innerHTML = html;
 }
 
 // 生成AI题目
-async function generateAIProblem() {
+async function generateAIProblem(retryCount = 0) {
+    const MAX_RETRIES = 2; // 最多重试2次（总共最多尝试3次）
+    
     // 获取表单数据
     const aiModel = document.getElementById('aiModelSelect').value;
     const title = document.getElementById('generateTitle').value;
@@ -1009,8 +1116,10 @@ async function generateAIProblem() {
     const spaceComplexity = document.getElementById('spaceComplexity').value;
     const additionalReqs = document.getElementById('additionalReqs').value;
     const testCaseCount = parseInt(document.getElementById('testCaseCount').value) || 5;
-    const includeReferenceSolution = document.getElementById('includeReferenceSolution').checked;
-    const includeAnalysis = document.getElementById('includeAnalysis').checked;
+    
+    // 强制设置为true，确保总是生成参考解答和思维分析
+    const includeReferenceSolution = true;
+    const includeAnalysis = true;
     
     // 验证
     if (knowledgePoints.length === 0) {
@@ -1040,18 +1149,34 @@ async function generateAIProblem() {
     document.getElementById('generateAIProblemForm').style.display = 'none';
     document.getElementById('generateProgress').style.display = 'block';
     document.getElementById('generateModalFooter').style.display = 'none';
+
+    // 更新进度信息
+    const progressText = document.querySelector('#generateProgress p');
+    if (retryCount > 0) {
+        progressText.textContent = `AI正在生成题目，请稍候...（第${retryCount + 1}次尝试）`;
+    } else {
+        progressText.textContent = `AI正在生成题目，请稍候...`;
+    }
     
     try {
+        // 设置超时时间为2分钟
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
+        
         const response = await fetch('/api/problems/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(requestData)
+            body: JSON.stringify(requestData),
+            signal: controller.signal
         });
         
+        // 清除超时
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
-            throw new Error(`生成题目失败: ${response.statusText}`);
+            throw new Error(`服务器响应错误: ${response.status} ${response.statusText}`);
         }
         
         const generatedProblem = await response.json();
@@ -1064,7 +1189,38 @@ async function generateAIProblem() {
         displayGeneratedProblem(generatedProblem);
     } catch (error) {
         console.error('生成题目失败:', error);
-        alert(`生成题目失败: ${error.message}`);
+        
+        // 处理不同类型的错误
+        let errorMessage = '';
+        let canRetry = false;
+        
+        if (error.name === 'AbortError') {
+            errorMessage = '生成题目请求超时，可能是服务器处理时间过长或网络问题';
+            canRetry = true;
+        } else if (error.message.includes('reset by peer') || 
+                   error.message.includes('network') || 
+                   error.message.includes('connection') ||
+                   error.message.includes('timeout')) {
+            errorMessage = `网络连接错误: ${error.message}`;
+            canRetry = true;
+        } else {
+            errorMessage = `生成题目失败: ${error.message}`;
+        }
+        
+        // 如果可以重试且未超过最大重试次数
+        if (canRetry && retryCount < MAX_RETRIES) {
+            console.log(`正在进行第${retryCount + 1}次重试...`);
+            // 显示正在重试的消息
+            document.querySelector('#generateProgress p').textContent = 
+                `检测到网络问题，正在重试 (${retryCount + 1}/${MAX_RETRIES})...`;
+            
+            // 延迟2秒后重试
+            setTimeout(() => generateAIProblem(retryCount + 1), 2000);
+            return;
+        }
+        
+        // 超过重试次数或不能重试的错误
+        alert(errorMessage);
         
         // 恢复表单显示
         document.getElementById('generateProgress').style.display = 'none';
@@ -1135,6 +1291,61 @@ function displayGeneratedProblem(problem) {
     }
     document.getElementById('previewTags').innerHTML = tagsHtml;
     
+    // 参考解答和思维分析 - 添加可折叠的部分
+    const previewContainer = document.querySelector('#generatedProblemResult .card-body');
+    
+    // 移除旧的参考解答和思维分析块（如果有）
+    const oldSolution = document.getElementById('previewReferenceSolution');
+    const oldAnalysis = document.getElementById('previewThinkingAnalysis');
+    if (oldSolution) oldSolution.remove();
+    if (oldAnalysis) oldAnalysis.remove();
+    
+    // 添加参考解答
+    if (problem.reference_solution && problem.reference_solution.trim() !== '') {
+        const solutionDiv = document.createElement('div');
+        solutionDiv.id = 'previewReferenceSolution';
+        solutionDiv.className = 'mt-4';
+        solutionDiv.innerHTML = `
+            <h6>参考解答:</h6>
+            <div class="mb-3">
+                <button class="btn btn-outline-primary w-100 text-start" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#previewCollapseSolution" 
+                        aria-expanded="false" aria-controls="previewCollapseSolution">
+                    <i class="bi bi-code-square"></i> 参考解答 <span class="small text-muted">(点击展开)</span>
+                </button>
+                <div class="collapse mt-2" id="previewCollapseSolution">
+                    <div class="card card-body">
+                        <pre>${problem.reference_solution.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                    </div>
+                </div>
+            </div>
+        `;
+        previewContainer.appendChild(solutionDiv);
+    }
+    
+    // 添加思维分析
+    if (problem.thinking_analysis && problem.thinking_analysis.trim() !== '') {
+        const analysisDiv = document.createElement('div');
+        analysisDiv.id = 'previewThinkingAnalysis';
+        analysisDiv.className = 'mt-3';
+        analysisDiv.innerHTML = `
+            <h6>思维分析:</h6>
+            <div class="mb-3">
+                <button class="btn btn-outline-info w-100 text-start" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#previewCollapseAnalysis" 
+                        aria-expanded="false" aria-controls="previewCollapseAnalysis">
+                    <i class="bi bi-lightbulb"></i> 思维分析 <span class="small text-muted">(点击展开)</span>
+                </button>
+                <div class="collapse mt-2" id="previewCollapseAnalysis">
+                    <div class="card card-body">
+                        ${problem.thinking_analysis.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            </div>
+        `;
+        previewContainer.appendChild(analysisDiv);
+    }
+    
     // 启用保存按钮
     document.getElementById('saveGeneratedProblemBtn').disabled = false;
     document.getElementById('generateModalFooter').style.display = 'flex';
@@ -1178,4 +1389,20 @@ async function saveGeneratedProblem() {
         console.error('保存题目失败:', error);
         alert(`保存题目失败: ${error.message}`);
     }
+}
+
+// 调试辅助函数：记录问题详情的关键属性
+function logProblemDetails(problem, examples) {
+    console.log('问题ID:', problem.id);
+    console.log('问题标题:', problem.title);
+    console.log('问题难度:', problem.difficulty);
+    console.log('问题描述长度:', problem.description ? problem.description.length : 0);
+    console.log('样例数量:', examples ? examples.length : 0);
+    
+    if (examples && examples.length > 0) {
+        console.log('第一个样例输入:', examples[0].input);
+        console.log('第一个样例输出:', examples[0].output);
+    }
+    
+    console.log('知识点标签:', problem.knowledge_tag);
 }

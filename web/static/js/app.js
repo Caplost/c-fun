@@ -67,15 +67,45 @@ int main() {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Submit button
-    submitBtn.addEventListener('click', submitSolution);
-    
+    // Submit Button
+    if (submitBtn) {
+        submitBtn.addEventListener('click', submitSolution);
+    }
+
     // Back to problem button
-    backToProblemBtn.addEventListener('click', () => {
-        submissionResult.style.display = 'none';
-        problemDetail.style.display = 'block';
-    });
-    
+    if (backToProblemBtn) {
+        backToProblemBtn.addEventListener('click', () => {
+            submissionResult.style.display = 'none';
+            problemDetail.style.display = 'block';
+        });
+    }
+
+    // Back to problems list button
+    const backToProblemsBtn = document.getElementById('back-to-problems-btn');
+    if (backToProblemsBtn) {
+        backToProblemsBtn.addEventListener('click', goBackToProblems);
+    }
+
+    // Import Problems Button
+    if (importProblemsBtn) {
+        importProblemsBtn.addEventListener('click', openImportDialog);
+    }
+
+    // Close import dialog
+    if (closeDialogBtn) {
+        closeDialogBtn.addEventListener('click', closeImportDialog);
+    }
+
+    // Cancel import
+    if (cancelImportBtn) {
+        cancelImportBtn.addEventListener('click', closeImportDialog);
+    }
+
+    // Submit import
+    if (submitImportBtn) {
+        submitImportBtn.addEventListener('click', submitImportProblems);
+    }
+
     // Navigation
     document.getElementById('nav-problems').addEventListener('click', (e) => {
         e.preventDefault();
@@ -86,24 +116,6 @@ function setupEventListeners() {
         e.preventDefault();
         alert('功能开发中，敬请期待！');
     });
-    
-    // Add handler for back to problems button from problem detail
-    document.getElementById('back-to-problems').addEventListener('click', (e) => {
-        e.preventDefault();
-        goBackToProblems();
-    });
-    
-    // Add handler for back to problems button from submission result
-    document.getElementById('back-to-problems-from-result').addEventListener('click', (e) => {
-        e.preventDefault();
-        goBackToProblems();
-    });
-    
-    // 导入题目相关事件监听
-    importProblemsBtn.addEventListener('click', openImportDialog);
-    closeDialogBtn.addEventListener('click', closeImportDialog);
-    cancelImportBtn.addEventListener('click', closeImportDialog);
-    submitImportBtn.addEventListener('click', submitImportProblems);
     
     // 点击对话框外部时关闭
     window.addEventListener('click', (e) => {
@@ -128,25 +140,31 @@ function setupEventListeners() {
     });
 }
 
-// Load problems list with user status
+// Load problems
 async function loadProblems() {
     try {
-        // 使用带有用户状态的API
-        const response = await fetch(`/api/problems/status?user_id=${currentUser.id}`);
-        const problems = await response.json();
+        // Check if main.js has already loaded problems
+        const problemsList = document.getElementById('problemsList');
+        if (problemsList && problemsList.children.length > 0) {
+            // Problems already loaded by main.js, no need to load again
+            return;
+        }
+
+        const userID = currentUser.id;
+        const response = await fetch(`/api/problems/status?user_id=${userID}`);
+        const data = await response.json();
         
-        // 保存所有题目数据
-        allProblems = problems;
+        allProblems = data;
         
-        // 提取所有唯一的知识点标签
-        const allTags = extractAllTags(problems);
+        // Extract all tags
+        const allTags = extractAllTags(data);
         renderTagFilters(allTags);
         
-        // 渲染题目列表
-        renderProblemsList(problems);
+        // Apply filters
+        applyFilters();
     } catch (error) {
         console.error('Error loading problems:', error);
-        problemsContainer.innerHTML = '<div class="error">加载题目时出错，请稍后再试。</div>';
+        alert('加载题目列表时出错，请刷新页面重试。');
     }
 }
 
@@ -255,44 +273,36 @@ function applyFilters() {
 
 // Render problems list
 function renderProblemsList(problems) {
-    if (problems.length === 0) {
-        problemsContainer.innerHTML = '<div class="empty">没有符合条件的题目。</div>';
-        return;
-    }
+    const problemsList = document.getElementById('problemsList');
+    if (!problemsList) return;
     
-    let html = '';
+    problemsList.innerHTML = '';
+
     problems.forEach(problem => {
-        const translatedDifficulty = difficultyTranslation[problem.difficulty] || problem.difficulty;
-        const statusClass = problem.solved ? 'status-solved' : (problem.attempted ? 'status-attempted' : '');
-        const statusText = problem.solved ? '已解决' : (problem.attempted ? '尝试中' : '');
+        const statusClass = getStatusClass(problem);
+        const statusText = getStatusText(problem);
         
-        html += `
-            <div class="problem-card" data-id="${problem.id}">
-                ${statusClass ? `<span class="problem-status ${statusClass}">${statusText}</span>` : ''}
-                <div class="problem-info">
-                    <span class="problem-id">#${problem.id}</span>
-                    <h3>${problem.title}</h3>
-                </div>
-                <div class="problem-meta">
-                    <span class="problem-difficulty difficulty-${problem.difficulty.toLowerCase()}">${translatedDifficulty}</span>
-                </div>
-                ${problem.knowledge_tag && problem.knowledge_tag.length > 0 ? 
-                    `<div class="problem-tags">
-                        ${problem.knowledge_tag.map(tag => `<span class="problem-tag">${tag}</span>`).join('')}
-                    </div>` : ''
-                }
-            </div>
+        const row = document.createElement('tr');
+        row.className = 'problem-card';
+        row.setAttribute('data-id', problem.id);
+        
+        row.innerHTML = `
+            <td>${problem.id}</td>
+            <td>
+                <a href="#problem-${problem.id}" class="problem-link">
+                    ${problem.title}
+                </a>
+            </td>
+            <td>${difficultyTranslation[problem.difficulty] || problem.difficulty}</td>
+            <td><span class="status-indicator ${statusClass}"></span> ${statusText}</td>
         `;
-    });
-    
-    problemsContainer.innerHTML = html;
-    
-    // Add click event listeners to problem cards
-    document.querySelectorAll('.problem-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const problemId = card.getAttribute('data-id');
-            loadProblemDetail(problemId);
+        
+        // Add click event
+        row.addEventListener('click', () => {
+            loadProblemDetail(problem.id);
         });
+        
+        problemsList.appendChild(row);
     });
 }
 
@@ -304,6 +314,10 @@ async function loadProblemDetail(problemId) {
         // 使用带状态的API获取问题详情
         const response = await fetch(`/api/problems/${problemId}/status?user_id=${currentUser.id}`);
         const data = await response.json();
+        
+        // 调试输出问题详情，特别是描述字段
+        console.log('Problem detail loaded:', data);
+        console.log('Problem description:', data.problem.description);
         
         renderProblemDetail(data.problem, data.examples, data);
         
@@ -356,9 +370,19 @@ function renderProblemDetail(problem, examples, statusData) {
     const descriptionParts = parseProblemDescription(problem.description);
     
     // 设置题目描述、输入、输出
-    problemDescriptionText.innerHTML = descriptionParts.description || '';
-    problemInput.innerHTML = descriptionParts.input || '';
-    problemOutput.innerHTML = descriptionParts.output || '';
+    try {
+        problemDescriptionText.innerHTML = descriptionParts.description || '无题目描述';
+        problemInput.innerHTML = descriptionParts.input || '';
+        problemOutput.innerHTML = descriptionParts.output || '';
+        
+        // 如果描述为空，显示提示信息
+        if (!descriptionParts.description || descriptionParts.description.trim() === '') {
+            problemDescriptionText.innerHTML = '<p class="text-warning">题目描述不可用或为空</p>';
+        }
+    } catch (error) {
+        console.error('Error setting problem description:', error);
+        problemDescriptionText.innerHTML = '<p class="text-danger">显示题目描述时出错</p>';
+    }
     
     // Render examples
     let examplesHtml = '';
@@ -381,6 +405,14 @@ function renderProblemDetail(problem, examples, statusData) {
 
 // 解析题目描述，将其分为题目描述、输入和输出部分
 function parseProblemDescription(htmlDescription) {
+    if (!htmlDescription) {
+        return {
+            description: '题目描述不可用',
+            input: '',
+            output: ''
+        };
+    }
+    
     const result = {
         description: '',
         input: '',
@@ -632,5 +664,26 @@ async function submitImportProblems() {
         // 恢复按钮状态
         submitImportBtn.disabled = false;
         submitImportBtn.textContent = '导入';
+    }
+}
+
+// Helper functions
+function getStatusClass(problem) {
+    if (problem.solved) {
+        return 'status-solved';
+    } else if (problem.attempted) {
+        return 'status-attempted';
+    } else {
+        return 'status-unsolved';
+    }
+}
+
+function getStatusText(problem) {
+    if (problem.solved) {
+        return '已解决';
+    } else if (problem.attempted) {
+        return '尝试中';
+    } else {
+        return '未做';
     }
 } 

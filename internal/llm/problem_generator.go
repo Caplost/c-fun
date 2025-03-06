@@ -1,6 +1,7 @@
 package llm
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -466,8 +467,8 @@ func NewProblemGenerator(configPath string) (*ProblemGenerator, error) {
 	}, nil
 }
 
-// GenerateProblem 生成编程问题
-func (g *ProblemGenerator) GenerateProblem(req ProblemGenerationRequest) (*GeneratedProblem, error) {
+// GenerateProblemWithContext 使用指定的上下文生成编程问题
+func (g *ProblemGenerator) GenerateProblemWithContext(ctx context.Context, req ProblemGenerationRequest) (*GeneratedProblem, error) {
 	// 加载LLM配置获取系统提示词
 	llmConfig, err := config.LoadLLMConfig(g.configPath)
 	if err != nil {
@@ -486,9 +487,9 @@ func (g *ProblemGenerator) GenerateProblem(req ProblemGenerationRequest) (*Gener
 		},
 	}
 
-	// 调用LLM生成问题
+	// 调用LLM生成问题，使用上下文控制超时
 	log.Printf("正在生成题目: %s, 难度: %s", req.Title, req.Difficulty)
-	content, err := g.llmClient.GenerateCompletion(messages)
+	content, err := g.llmClient.GenerateCompletionWithContext(ctx, messages)
 	if err != nil {
 		return nil, fmt.Errorf("生成问题失败: %w", err)
 	}
@@ -511,6 +512,15 @@ func (g *ProblemGenerator) GenerateProblem(req ProblemGenerationRequest) (*Gener
 	}
 
 	return problem, nil
+}
+
+// 原有的 GenerateProblem 函数现在基于上下文版本实现
+func (g *ProblemGenerator) GenerateProblem(req ProblemGenerationRequest) (*GeneratedProblem, error) {
+	// 创建一个带有超时的背景上下文
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	return g.GenerateProblemWithContext(ctx, req)
 }
 
 // buildPrompt 构建提示词

@@ -470,6 +470,8 @@ func (h *Handler) GetAllProblemsWithStatus(w http.ResponseWriter, r *http.Reques
 
 	// 获取所有题目
 	problems := h.store.ListProblems()
+	// 注意: 这里直接使用了 ListProblems 函数，该函数已经按 ID 倒序排列了题目
+	// 所以不需要再次排序
 
 	// 获取用户的所有题目状态
 	userStatuses, err := h.store.GetUserProblemStatuses(userID)

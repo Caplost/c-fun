@@ -7,7 +7,60 @@
     "time_limit": 1000,
     "memory_limit": 65536,
     "knowledge_tag": null,
+    "reference_solution": "",
+    "thinking_analysis": "",
     "created_at": "2025-02-27T19:52:22.572747+08:00"
+  },
+  "10": {
+    "id": 10,
+    "title": "字符串中的数字求和",
+    "description": "给定一个字符串，其中包含数字和非数字字符。请编写一个程序，提取字符串中的所有数字，并将它们相加，输出最终的和。\n\n输入格式：\n- 一行字符串，长度不超过1000。\n\n输出格式：\n- 一个整数，表示字符串中所有数字的和。\n\n数据范围：\n- 字符串中可能包含大小写字母、数字、空格和其他特殊字符。\n- 字符串中的数字可能连续出现，也可能分散出现。\n- 字符串中的数字可能为多位数。\n\n示例：\n输入：\"abc123xyz45 6\"\n输出：174\n解释：字符串中的数字为123、45和6，它们的和为174。",
+    "difficulty": "Medium",
+    "time_limit": 1000,
+    "memory_limit": 262144,
+    "knowledge_tag": [
+      "变量与常量",
+      "基本数据类型",
+      "条件语句",
+      "循环语句",
+      "数组",
+      "函数",
+      "字符串处理"
+    ],
+    "reference_solution": "",
+    "thinking_analysis": "",
+    "created_at": "2025-03-06T13:29:07.942382+08:00"
+  },
+  "11": {
+    "id": 11,
+    "title": "数字变换的奇妙序列",
+    "description": "小杨在研究一个有趣的数字变换问题。对于任意正整数n，按照以下规则生成序列直到出现1为止：\n- 如果当前数是1，停止变换\n- 如果是偶数，则下一步变为n/2\n- 如果是奇数且不是1，则下一步变为3n+1或n-1（当n能被3整除时选择前者，否则后者）\n\n输入一个正整数n，输出变换过程中产生的所有数字（包含原始数字），用空格分隔。\n\n输入格式：一个整数n (1 ≤ n ≤ 10^5)\n输出格式：由空格分隔的数字序列\n数据范围：保证所有测试用例都能在1000步内结束",
+    "difficulty": "Medium",
+    "time_limit": 1000,
+    "memory_limit": 262144,
+    "knowledge_tag": [
+      "条件语句",
+      "循环语句"
+    ],
+    "reference_solution": "",
+    "thinking_analysis": "",
+    "created_at": "2025-03-06T15:15:43.58755+08:00"
+  },
+  "12": {
+    "id": 12,
+    "title": "总线带宽计算",
+    "description": "在计算机组成原理中，总线带宽由数据总线宽度、时钟频率和传输次数决定。请编写程序根据给定参数计算总线带宽。\n\n输入格式：三个整数，分别表示数据总线宽度（位，16的倍数）、时钟频率（MHz）、每个时钟周期的传输次数。\n输出格式：总线带宽（MB/s），保留两位小数。\n数据范围：数据总线宽度∈[16,64]且为16的倍数；时钟频率∈[1,1000]；传输次数∈[1,4]。",
+    "difficulty": "Medium",
+    "time_limit": 1000,
+    "memory_limit": 262144,
+    "knowledge_tag": [
+      "计算机基本构成",
+      "数学计算",
+      "单位转换"
+    ],
+    "reference_solution": "#include \u003ciostream\u003e\n#include \u003ciomanip\u003e\nusing namespace std;\n\nint main() {\n    int w, f, t;\n    cin \u003e\u003e w \u003e\u003e f \u003e\u003e t;\n    double bandwidth = (w / 8.0) * f * t;\n    cout \u003c\u003c fixed \u003c\u003c setprecision(2) \u003c\u003c bandwidth \u003c\u003c endl;\n    return 0;\n}",
+    "thinking_analysis": "解题思路：\n1. 理解总线带宽公式：带宽 = (数据总线宽度/8) * 时钟频率 * 传输次数\n2. 单位转换：位→字节（/8），MHz→Hz（*1e6），最终结果单位为MB/s（1e6字节/秒）\n3. 注意浮点数精度处理：必须使用8.0进行除法运算\n4. 常见错误点：\n   - 忘记位到字节的转换\n   - 整数除法导致精度丢失\n   - 输出格式不符合两位小数要求",
+    "created_at": "2025-03-06T16:00:19.735456+08:00"
   },
   "2": {
     "id": 2,
@@ -17,6 +70,8 @@
     "time_limit": 500,
     "memory_limit": 32768,
     "knowledge_tag": null,
+    "reference_solution": "",
+    "thinking_analysis": "",
     "created_at": "2025-02-27T19:52:22.572766+08:00"
   },
   "3": {
@@ -27,6 +82,8 @@
     "time_limit": 800,
     "memory_limit": 49152,
     "knowledge_tag": null,
+    "reference_solution": "",
+    "thinking_analysis": "",
     "created_at": "2025-02-27T19:52:22.572774+08:00"
   },
   "4": {
@@ -37,6 +94,8 @@
     "time_limit": 1000,
     "memory_limit": 65536,
     "knowledge_tag": null,
+    "reference_solution": "",
+    "thinking_analysis": "",
     "created_at": "2025-02-27T19:52:42.635751+08:00"
   },
   "5": {
@@ -47,6 +106,8 @@
     "time_limit": 1000,
     "memory_limit": 65536,
     "knowledge_tag": null,
+    "reference_solution": "",
+    "thinking_analysis": "",
     "created_at": "2025-02-27T19:55:57.734828+08:00"
   },
   "6": {
@@ -57,6 +118,8 @@
     "time_limit": 1000,
     "memory_limit": 65536,
     "knowledge_tag": null,
+    "reference_solution": "",
+    "thinking_analysis": "",
     "created_at": "2025-03-05T21:19:29.845835+08:00"
   },
   "7": {
@@ -70,6 +133,8 @@
       "计算机基本构成",
       "内存地址计算"
     ],
+    "reference_solution": "",
+    "thinking_analysis": "",
     "created_at": "2025-03-06T11:44:12.68074+08:00"
   },
   "8": {
@@ -83,6 +148,23 @@
       "计算机基本构成",
       "操作系统基本概念"
     ],
+    "reference_solution": "",
+    "thinking_analysis": "",
     "created_at": "2025-03-06T11:45:49.027769+08:00"
+  },
+  "9": {
+    "id": 9,
+    "title": "计算机内存地址转换",
+    "description": "在计算机系统中，内存地址通常以十六进制表示。给定一个内存地址的十六进制字符串，你需要将其转换为二进制形式，并计算其中1的个数。\n\n输入格式:\n一个字符串，表示内存地址的十六进制形式。字符串长度不超过8个字符，且只包含0-9和A-F。\n\n输出格式:\n一个整数，表示该内存地址的二进制形式中1的个数。\n\n数据范围:\n输入字符串长度 ≤ 8\n\n示例:\n输入: \"1A3F\"\n输出: 8\n解释: 1A3F的二进制形式为0001101000111111，其中1的个数为8。",
+    "difficulty": "Medium",
+    "time_limit": 1000,
+    "memory_limit": 262144,
+    "knowledge_tag": [
+      "计算机基本构成",
+      "进制转换"
+    ],
+    "reference_solution": "",
+    "thinking_analysis": "",
+    "created_at": "2025-03-06T13:22:29.206723+08:00"
   }
 }

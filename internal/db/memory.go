@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -127,14 +128,16 @@ func (s *MemoryStore) GetUserByUsername(username string) (models.User, error) {
 func (s *MemoryStore) AddProblem(problem models.Problem) (models.Problem, error) {
 	// 转换为data.Problem
 	dataProblem := &data.Problem{
-		ID:           problem.ID,
-		Title:        problem.Title,
-		Description:  problem.Description,
-		Difficulty:   data.Difficulty(problem.Difficulty),
-		TimeLimit:    problem.TimeLimit,
-		MemoryLimit:  problem.MemoryLimit,
-		KnowledgeTag: problem.KnowledgeTag,
-		CreatedAt:    problem.CreatedAt,
+		ID:                problem.ID,
+		Title:             problem.Title,
+		Description:       problem.Description,
+		Difficulty:        data.Difficulty(problem.Difficulty),
+		TimeLimit:         problem.TimeLimit,
+		MemoryLimit:       problem.MemoryLimit,
+		KnowledgeTag:      problem.KnowledgeTag,
+		ReferenceSolution: problem.ReferenceSolution,
+		ThinkingAnalysis:  problem.ThinkingAnalysis,
+		CreatedAt:         problem.CreatedAt,
 	}
 
 	// 使用problemStore创建问题
@@ -145,15 +148,17 @@ func (s *MemoryStore) AddProblem(problem models.Problem) (models.Problem, error)
 
 	// 转换回models.Problem
 	return models.Problem{
-		ID:           result.ID,
-		Title:        result.Title,
-		Description:  result.Description,
-		Difficulty:   string(result.Difficulty),
-		TimeLimit:    result.TimeLimit,
-		MemoryLimit:  result.MemoryLimit,
-		KnowledgeTag: result.KnowledgeTag,
-		CreatedAt:    result.CreatedAt,
-		UpdatedAt:    time.Now(),
+		ID:                result.ID,
+		Title:             result.Title,
+		Description:       result.Description,
+		Difficulty:        string(result.Difficulty),
+		TimeLimit:         result.TimeLimit,
+		MemoryLimit:       result.MemoryLimit,
+		KnowledgeTag:      result.KnowledgeTag,
+		ReferenceSolution: result.ReferenceSolution,
+		ThinkingAnalysis:  result.ThinkingAnalysis,
+		CreatedAt:         result.CreatedAt,
+		UpdatedAt:         time.Now(),
 	}, nil
 }
 
@@ -167,15 +172,17 @@ func (s *MemoryStore) GetProblemByID(id int) (models.Problem, error) {
 
 	// 转换为models.Problem
 	return models.Problem{
-		ID:           dataProblem.ID,
-		Title:        dataProblem.Title,
-		Description:  dataProblem.Description,
-		Difficulty:   string(dataProblem.Difficulty),
-		TimeLimit:    dataProblem.TimeLimit,
-		MemoryLimit:  dataProblem.MemoryLimit,
-		KnowledgeTag: dataProblem.KnowledgeTag,
-		CreatedAt:    dataProblem.CreatedAt,
-		UpdatedAt:    time.Now(),
+		ID:                dataProblem.ID,
+		Title:             dataProblem.Title,
+		Description:       dataProblem.Description,
+		Difficulty:        string(dataProblem.Difficulty),
+		TimeLimit:         dataProblem.TimeLimit,
+		MemoryLimit:       dataProblem.MemoryLimit,
+		KnowledgeTag:      dataProblem.KnowledgeTag,
+		ReferenceSolution: dataProblem.ReferenceSolution,
+		ThinkingAnalysis:  dataProblem.ThinkingAnalysis,
+		CreatedAt:         dataProblem.CreatedAt,
+		UpdatedAt:         time.Now(),
 	}, nil
 }
 
@@ -191,17 +198,24 @@ func (s *MemoryStore) ListProblems() []models.Problem {
 	problems := make([]models.Problem, 0, len(dataProblems))
 	for _, p := range dataProblems {
 		problems = append(problems, models.Problem{
-			ID:           p.ID,
-			Title:        p.Title,
-			Description:  p.Description,
-			Difficulty:   string(p.Difficulty),
-			TimeLimit:    p.TimeLimit,
-			MemoryLimit:  p.MemoryLimit,
-			KnowledgeTag: p.KnowledgeTag,
-			CreatedAt:    p.CreatedAt,
-			UpdatedAt:    time.Now(),
+			ID:                p.ID,
+			Title:             p.Title,
+			Description:       p.Description,
+			Difficulty:        string(p.Difficulty),
+			TimeLimit:         p.TimeLimit,
+			MemoryLimit:       p.MemoryLimit,
+			KnowledgeTag:      p.KnowledgeTag,
+			ReferenceSolution: p.ReferenceSolution,
+			ThinkingAnalysis:  p.ThinkingAnalysis,
+			CreatedAt:         p.CreatedAt,
+			UpdatedAt:         time.Now(),
 		})
 	}
+
+	// 按照ID倒序排列
+	sort.Slice(problems, func(i, j int) bool {
+		return problems[i].ID > problems[j].ID
+	})
 
 	return problems
 }

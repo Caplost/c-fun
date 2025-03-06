@@ -16,15 +16,17 @@ type User struct {
 
 // Problem represents a programming problem
 type Problem struct {
-	ID           int       `json:"id"`
-	Title        string    `json:"title"`
-	Description  string    `json:"description"`
-	Difficulty   string    `json:"difficulty"`    // Easy, Medium, Hard
-	TimeLimit    int       `json:"time_limit"`    // In milliseconds
-	MemoryLimit  int       `json:"memory_limit"`  // In kilobytes
-	KnowledgeTag []string  `json:"knowledge_tag"` // 知识点标签，例如：["数组", "二分搜索", "动态规划"]
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID                int       `json:"id"`
+	Title             string    `json:"title"`
+	Description       string    `json:"description"`
+	Difficulty        string    `json:"difficulty"`         // Easy, Medium, Hard
+	TimeLimit         int       `json:"time_limit"`         // In milliseconds
+	MemoryLimit       int       `json:"memory_limit"`       // In kilobytes
+	KnowledgeTag      []string  `json:"knowledge_tag"`      // 知识点标签，例如：["数组", "二分搜索", "动态规划"]
+	ReferenceSolution string    `json:"reference_solution"` // 参考解答代码
+	ThinkingAnalysis  string    `json:"thinking_analysis"`  // 思维训练分析
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
 // TestCase represents input/output test data for a problem

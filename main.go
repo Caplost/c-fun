@@ -55,6 +55,12 @@ func main() {
 	server := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
+		// 添加超时设置
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 300 * time.Second, // 增加写超时时间到5分钟
+		IdleTimeout:  120 * time.Second, // 闲置连接超时时间
+		// 允许更多连接和更长的请求时间，适合AI生成任务
+		MaxHeaderBytes: 1 << 20, // 1MB
 	}
 
 	log.Printf("服务器启动成功: http://localhost:%s", port)

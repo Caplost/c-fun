@@ -21,14 +21,16 @@ const (
 
 // 问题结构体定义
 type Problem struct {
-	ID           int        `json:"id"`
-	Title        string     `json:"title"`
-	Description  string     `json:"description"`
-	Difficulty   Difficulty `json:"difficulty"`
-	TimeLimit    int        `json:"time_limit"`    // 以毫秒为单位
-	MemoryLimit  int        `json:"memory_limit"`  // 以KB为单位
-	KnowledgeTag []string   `json:"knowledge_tag"` // 知识点标签
-	CreatedAt    time.Time  `json:"created_at"`
+	ID                int        `json:"id"`
+	Title             string     `json:"title"`
+	Description       string     `json:"description"`
+	Difficulty        Difficulty `json:"difficulty"`
+	TimeLimit         int        `json:"time_limit"`         // 以毫秒为单位
+	MemoryLimit       int        `json:"memory_limit"`       // 以KB为单位
+	KnowledgeTag      []string   `json:"knowledge_tag"`      // 知识点标签
+	ReferenceSolution string     `json:"reference_solution"` // 参考解答
+	ThinkingAnalysis  string     `json:"thinking_analysis"`  // 思维分析
+	CreatedAt         time.Time  `json:"created_at"`
 }
 
 // 测试用例结构体定义

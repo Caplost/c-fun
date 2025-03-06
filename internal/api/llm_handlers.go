@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -15,6 +16,17 @@ import (
 
 // GenerateAIProblem 处理AI生成题目请求
 func (h *Handler) GenerateAIProblem(w http.ResponseWriter, r *http.Request) {
+	// 为请求添加超时上下文，设置为3分钟
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Minute)
+	defer cancel()
+
+	// 使用上下文更新请求
+	r = r.WithContext(ctx)
+
+	// 设置长连接和保持活动
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Keep-Alive", "timeout=180")
+
 	// 解析请求
 	var req struct {
 		Title                    string   `json:"title"`                      // 题目名称/主题
@@ -101,10 +113,35 @@ func (h *Handler) GenerateAIProblem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 生成问题
+	// 使用上下文生成问题
 	log.Printf("开始生成问题: %s", req.Title)
-	problem, err := generator.GenerateProblem(generationReq)
+
+	// 添加错误恢复
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("生成问题时发生崩溃: %v", r)
+			respondError(w, http.StatusInternalServerError, fmt.Sprintf("生成问题时发生内部错误: %v", r))
+		}
+	}()
+
+	problem, err := generator.GenerateProblemWithContext(ctx, generationReq)
 	if err != nil {
+		// 检查是否是超时错误
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Printf("生成问题超时: %v", err)
+			respondError(w, http.StatusGatewayTimeout, "生成问题超时，请稍后再试")
+			return
+		}
+
+		// 检查是否是网络连接错误
+		if strings.Contains(err.Error(), "connection") ||
+			strings.Contains(err.Error(), "network") ||
+			strings.Contains(err.Error(), "reset by peer") {
+			log.Printf("生成问题时发生网络错误: %v", err)
+			respondError(w, http.StatusBadGateway, "无法连接到AI服务，请稍后再试: "+err.Error())
+			return
+		}
+
 		log.Printf("生成问题失败: %v", err)
 		respondError(w, http.StatusInternalServerError, "生成问题失败: "+err.Error())
 		return
@@ -147,14 +184,16 @@ func (h *Handler) SaveGeneratedProblem(w http.ResponseWriter, r *http.Request) {
 
 	// 创建新问题
 	problem := models.Problem{
-		Title:        genProblem.Title,
-		Description:  genProblem.Description,
-		Difficulty:   genProblem.Difficulty,
-		TimeLimit:    genProblem.TimeLimit,
-		MemoryLimit:  genProblem.MemoryLimit,
-		KnowledgeTag: genProblem.KnowledgeTag,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		Title:             genProblem.Title,
+		Description:       genProblem.Description,
+		Difficulty:        genProblem.Difficulty,
+		TimeLimit:         genProblem.TimeLimit,
+		MemoryLimit:       genProblem.MemoryLimit,
+		KnowledgeTag:      genProblem.KnowledgeTag,
+		ReferenceSolution: genProblem.ReferenceSolution, // 保存参考解答
+		ThinkingAnalysis:  genProblem.ThinkingAnalysis,  // 保存思维分析
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
 	}
 
 	// 添加到数据存储
@@ -183,28 +222,6 @@ func (h *Handler) SaveGeneratedProblem(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("添加测试用例失败: %v", err)
 			// 继续添加其他测试用例，不中断流程
-		}
-	}
-
-	// 如果有参考解答，可以保存为一个提交记录
-	if genProblem.ReferenceSolution != "" {
-		// 默认使用系统用户ID为0
-		submission := models.Submission{
-			UserID:      0,
-			ProblemID:   savedProblem.ID,
-			Code:        genProblem.ReferenceSolution,
-			Language:    "cpp",
-			Status:      "Reference Solution",
-			RunTime:     0,
-			Memory:      0,
-			CreatedAt:   time.Now(),
-			SubmittedAt: time.Now(),
-		}
-
-		_, err := h.store.AddSubmission(submission)
-		if err != nil {
-			log.Printf("保存参考解答失败: %v", err)
-			// 不中断流程
 		}
 	}
 

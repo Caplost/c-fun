@@ -15,6 +15,117 @@
       "is_example": true
     }
   ],
+  "10": [
+    {
+      "id": 25,
+      "problem_id": 10,
+      "input": "abc123xyz45 6",
+      "output": "174",
+      "is_example": true
+    },
+    {
+      "id": 26,
+      "problem_id": 10,
+      "input": "1a2b3c4d5e6f7g8h9i0j",
+      "output": "45",
+      "is_example": true
+    },
+    {
+      "id": 27,
+      "problem_id": 10,
+      "input": "hello world!",
+      "output": "0",
+      "is_example": false
+    },
+    {
+      "id": 28,
+      "problem_id": 10,
+      "input": "100 200 300 400 500",
+      "output": "1500",
+      "is_example": false
+    },
+    {
+      "id": 29,
+      "problem_id": 10,
+      "input": "abc123def456ghi789",
+      "output": "1368",
+      "is_example": false
+    }
+  ],
+  "11": [
+    {
+      "id": 30,
+      "problem_id": 11,
+      "input": "6",
+      "output": "6 3 10 5 14 7 6 3 10 5 14 7 6 3 2 1",
+      "is_example": true
+    },
+    {
+      "id": 31,
+      "problem_id": 11,
+      "input": "5",
+      "output": "5 14 7 6 3 10 5 14 7 6 3 2 1",
+      "is_example": true
+    },
+    {
+      "id": 32,
+      "problem_id": 11,
+      "input": "1",
+      "output": "1",
+      "is_example": false
+    },
+    {
+      "id": 33,
+      "problem_id": 11,
+      "input": "9",
+      "output": "9 28 14 7 6 3 10 5 14 7 6 3 2 1",
+      "is_example": false
+    },
+    {
+      "id": 34,
+      "problem_id": 11,
+      "input": "4",
+      "output": "4 2 1",
+      "is_example": false
+    }
+  ],
+  "12": [
+    {
+      "id": 35,
+      "problem_id": 12,
+      "input": "32 100 2",
+      "output": "800.00",
+      "is_example": true
+    },
+    {
+      "id": 36,
+      "problem_id": 12,
+      "input": "16 1 1",
+      "output": "2.00",
+      "is_example": true
+    },
+    {
+      "id": 37,
+      "problem_id": 12,
+      "input": "64 1000 4",
+      "output": "32000.00",
+      "is_example": false
+    },
+    {
+      "id": 38,
+      "problem_id": 12,
+      "input": "48 250 3",
+      "output": "4500.00",
+      "is_example": false
+    },
+    {
+      "id": 39,
+      "problem_id": 12,
+      "input": "16 500 2",
+      "output": "2000.00",
+      "is_example": false
+    }
+  ],
   "2": [
     {
       "id": 3,
@@ -143,6 +254,43 @@
       "problem_id": 8,
       "input": "3\n1 1\n1 1\n1 1",
       "output": "2 1 0\n3 2 1\n4 3 2",
+      "is_example": false
+    }
+  ],
+  "9": [
+    {
+      "id": 20,
+      "problem_id": 9,
+      "input": "1A3F",
+      "output": "8",
+      "is_example": true
+    },
+    {
+      "id": 21,
+      "problem_id": 9,
+      "input": "FF",
+      "output": "8",
+      "is_example": true
+    },
+    {
+      "id": 22,
+      "problem_id": 9,
+      "input": "0",
+      "output": "0",
+      "is_example": false
+    },
+    {
+      "id": 23,
+      "problem_id": 9,
+      "input": "ABCD",
+      "output": "10",
+      "is_example": false
+    },
+    {
+      "id": 24,
+      "problem_id": 9,
+      "input": "1234",
+      "output": "5",
       "is_example": false
     }
   ]
