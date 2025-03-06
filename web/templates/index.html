@@ -3,146 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>C++ 在线评测系统</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <title>C++在线评测系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+        }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+        .problem-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-solved {
+            background-color: #28a745;
+        }
+        .status-attempted {
+            background-color: #ffc107;
+        }
+        .status-unsolved {
+            background-color: #6c757d;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .quiz-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .quiz-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .outline-section {
+            margin-bottom: 30px;
+        }
+        .outline-section h4 {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+        .question-option {
+            margin-bottom: 10px;
+        }
+        .question-explanation {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #007bff;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>C++ 在线评测系统</h1>
-    </header>
-    
-    <nav>
-        <ul>
-            <li><a href="#" id="nav-problems">题目列表</a></li>
-            <li><a href="#" id="nav-submissions">我的提交</a></li>
-        </ul>
-    </nav>
-    
-    <main class="container">
-        <!-- 题目列表 -->
-        <section id="problems-list">
-            <div class="problems-header">
-                <h2>题目列表</h2>
-                <button id="import-problems-btn" class="action-btn">批量导入题目</button>
-            </div>
-            
-            <!-- 添加过滤和分类功能 -->
-            <div class="problems-filter">
-                <div class="filter-tabs">
-                    <button class="filter-tab active" data-filter="all">全部题目</button>
-                    <button class="filter-tab" data-filter="solved">已解决</button>
-                    <button class="filter-tab" data-filter="unsolved">未解决</button>
-                </div>
-                <div class="tag-filters">
-                    <span>知识点筛选：</span>
-                    <div id="tag-filter-container" class="tag-filter-container">
-                        <!-- 标签会通过JS动态加载 -->
-                    </div>
-                </div>
-            </div>
-            
-            <div class="problems-container">
-                <!-- 题目列表将通过 JavaScript 动态加载 -->
-                <div class="loading">加载中...</div>
-            </div>
-        </section>
+    <div class="container">
+        <h1 class="text-center mb-4">C++在线评测系统</h1>
         
-        <!-- 题目导入对话框 -->
-        <div id="import-dialog" class="dialog">
-            <div class="dialog-content">
-                <div class="dialog-header">
-                    <h3>批量导入题目</h3>
-                    <span class="close-btn">&times;</span>
-                </div>
-                <div class="dialog-body">
-                    <p>请在下方输入JSON格式的题目数据：</p>
-                    <textarea id="import-json" placeholder='{"problems": [{"title": "题目标题", "description": "题目描述", ...}]}' rows="15"></textarea>
-                    <div class="import-template">
-                        <p>JSON格式示例：</p>
-<pre>{
-  "problems": [
-    {
-      "title": "题目标题",
-      "description": "&lt;h3&gt;【题目描述】&lt;/h3&gt;&lt;p&gt;这是题目描述&lt;/p&gt;&lt;h3&gt;输入&lt;/h3&gt;&lt;p&gt;输入说明&lt;/p&gt;&lt;h3&gt;输出&lt;/h3&gt;&lt;p&gt;输出说明&lt;/p&gt;",
-      "difficulty": "Easy",
-      "time_limit": 1000,
-      "memory_limit": 65536,
-      "test_cases": [
-        {
-          "input": "测试输入",
-          "output": "测试输出",
-          "is_example": true
-        }
-      ]
-    }
-  ]
-}</pre>
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="problems-tab" data-bs-toggle="tab" data-bs-target="#problems" type="button" role="tab" aria-controls="problems" aria-selected="true">题目列表</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="submissions-tab" data-bs-toggle="tab" data-bs-target="#submissions" type="button" role="tab" aria-controls="submissions" aria-selected="false">提交记录</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="outline-tab" data-bs-toggle="tab" data-bs-target="#outline" type="button" role="tab" aria-controls="outline" aria-selected="false">大纲题库</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="quizzes-tab" data-bs-toggle="tab" data-bs-target="#quizzes" type="button" role="tab" aria-controls="quizzes" aria-selected="false">知识点测试</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="mainTabsContent">
+            <!-- 题目列表 -->
+            <div class="tab-pane fade show active" id="problems" role="tabpanel" aria-labelledby="problems-tab">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">题目列表</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary me-2" id="refreshProblemsBtn">刷新</button>
+                            <button class="btn btn-sm btn-outline-primary" id="createProblemBtn">新建题目</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>题目</th>
+                                        <th>难度</th>
+                                        <th>状态</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="problemsList">
+                                    <!-- 题目列表将通过JavaScript填充 -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                <div class="dialog-footer">
-                    <button id="cancel-import" class="btn">取消</button>
-                    <button id="submit-import" class="btn primary-btn">导入</button>
+            </div>
+            
+            <!-- 提交记录 -->
+            <div class="tab-pane fade" id="submissions" role="tabpanel" aria-labelledby="submissions-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">提交记录</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>题目</th>
+                                        <th>状态</th>
+                                        <th>时间</th>
+                                        <th>内存</th>
+                                        <th>提交时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="submissionsList">
+                                    <!-- 提交记录将通过JavaScript填充 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 大纲题库 -->
+            <div class="tab-pane fade" id="outline" role="tabpanel" aria-labelledby="outline-tab">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">大纲题库</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary me-2" id="generateQuestionsBtn">生成题目</button>
+                            <button class="btn btn-sm btn-outline-primary" id="createQuizBtn">创建测试</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <select class="form-select" id="outlineSectionSelect">
+                                    <option value="">选择大纲章节</option>
+                                    <option value="2.1">2.1 入门级</option>
+                                    <option value="2.1.1">2.1.1 基础知识与编程环境</option>
+                                    <option value="2.1.2">2.1.2 C++程序设计</option>
+                                    <option value="2.1.3">2.1.3 数据结构</option>
+                                    <option value="2.1.4">2.1.4 算法</option>
+                                    <option value="2.1.5">2.1.5 数学与其他</option>
+                                    <option value="2.2">2.2 提高级</option>
+                                    <option value="2.2.1">2.2.1 基础知识与编程环境</option>
+                                    <option value="2.2.2">2.2.2 C++程序设计</option>
+                                    <option value="2.2.3">2.2.3 数据结构</option>
+                                    <option value="2.2.4">2.2.4 算法</option>
+                                    <option value="2.2.5">2.2.5 数学与其他</option>
+                                    <option value="2.3">2.3 NOI级</option>
+                                    <option value="2.3.1">2.3.1 C++程序设计</option>
+                                    <option value="2.3.2">2.3.2 数据结构</option>
+                                    <option value="2.3.3">2.3.3 算法</option>
+                                    <option value="2.3.4">2.3.4 数学与其他</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" class="form-control" id="questionCountInput" placeholder="题目数量" value="10" min="1" max="20">
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary" id="loadOutlineQuestionsBtn">加载题目</button>
+                            </div>
+                        </div>
+                        
+                        <div id="outlineQuestions">
+                            <!-- 题目将通过JavaScript填充 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 知识点测试 -->
+            <div class="tab-pane fade" id="quizzes" role="tabpanel" aria-labelledby="quizzes-tab">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">知识点测试</h5>
+                        <button class="btn btn-sm btn-outline-primary" id="createNewQuizBtn">创建新测试</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="quizzesList">
+                            <!-- 测试列表将通过JavaScript填充 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 测试详情 -->
+                <div id="quizDetail" style="display: none;">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0" id="quizTitle">测试标题</h5>
+                            <button class="btn btn-sm btn-outline-secondary" id="backToQuizzesBtn">返回列表</button>
+                        </div>
+                        <div class="card-body">
+                            <p id="quizDescription">测试描述</p>
+                            <div id="quizQuestions">
+                                <!-- 测试题目将通过JavaScript填充 -->
+                            </div>
+                            <div class="text-center mt-4">
+                                <button class="btn btn-primary" id="submitQuizBtn">提交测试</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 测试结果 -->
+                <div id="quizResult" style="display: none;">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">测试结果</h5>
+                            <button class="btn btn-sm btn-outline-secondary" id="backToQuizzesFromResultBtn">返回列表</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-4">
+                                <h2 id="quizScore">得分: 0</h2>
+                                <div class="progress">
+                                    <div class="progress-bar" id="quizScoreBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                                </div>
+                            </div>
+                            <div id="quizResultDetails">
+                                <!-- 测试结果详情将通过JavaScript填充 -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- 题目详情 -->
-        <section id="problem-detail" class="problem-detail">
-            <div class="problem-header">
-                <h2 id="problem-title"></h2>
-                <div class="problem-info">
-                    <span id="problem-difficulty"></span>
-                    <span id="problem-limits"></span>
-                </div>
-            </div>
-            
-            <div class="problem-content">
-                <div class="problem-description">
-                    <h3>【题目描述】</h3>
-                    <div id="problem-description-text"></div>
-                    
-                    <h3>输入</h3>
-                    <div id="problem-input"></div>
-                    
-                    <h3>输出</h3>
-                    <div id="problem-output"></div>
-                    
-                    <h3>输出样例</h3>
-                    <div id="examples-container"></div>
-                </div>
-            </div>
-            
-            <div class="code-editor-container">
-                <h3>提交解答</h3>
-                <div class="code-editor-wrapper">
-                    <label for="code-editor" class="visually-hidden">代码编辑器</label>
-                    <textarea id="code-editor" placeholder="在这里编写您的 C++ 代码..." title="代码编辑器"></textarea>
-                </div>
-                <div class="editor-controls">
-                    <button id="submit-btn">提交</button>
-                    <button id="back-to-problems" class="back-btn">返回题目列表</button>
-                </div>
-            </div>
-        </section>
-        
-        <!-- 提交结果 -->
-        <section id="submission-result" class="submission-result">
-            <div class="result-header">
-                <h2>提交结果</h2>
-                <div id="result-status" class="status"></div>
-            </div>
-            
-            <div id="result-details" class="result-details">
-                <!-- 结果详情将通过 JavaScript 动态加载 -->
-            </div>
-            
-            <div class="result-controls">
-                <button id="back-to-problem" class="back-btn">返回题目</button>
-                <button id="back-to-problems-from-result" class="back-btn">返回题目列表</button>
-            </div>
-        </section>
-    </main>
+    </div>
     
-    <script src="/static/js/app.js"></script>
+    <!-- 创建/编辑题目模态框 -->
+    <div class="modal fade" id="problemModal" tabindex="-1" aria-labelledby="problemModalLabel" aria-hidden="true">
+        <!-- 创建/编辑题目的模态框内容 -->
+    </div>
+    
+    <!-- 查看提交详情模态框 -->
+    <div class="modal fade" id="submissionModal" tabindex="-1" aria-labelledby="submissionModalLabel" aria-hidden="true">
+        <!-- 查看提交详情的模态框内容 -->
+    </div>
+    
+    <!-- 创建测试模态框 -->
+    <div class="modal fade" id="createQuizModal" tabindex="-1" aria-labelledby="createQuizModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createQuizModalLabel">创建测试</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createQuizForm">
+                        <div class="mb-3">
+                            <label for="quizTitle" class="form-label">测试标题</label>
+                            <input type="text" class="form-control" id="quizTitleInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quizDescription" class="form-label">测试描述</label>
+                            <textarea class="form-control" id="quizDescriptionInput" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quizSection" class="form-label">大纲章节</label>
+                            <select class="form-select" id="quizSectionSelect">
+                                <option value="">选择大纲章节</option>
+                                <option value="2.1">2.1 入门级</option>
+                                <option value="2.1.1">2.1.1 基础知识与编程环境</option>
+                                <option value="2.1.2">2.1.2 C++程序设计</option>
+                                <option value="2.1.3">2.1.3 数据结构</option>
+                                <option value="2.1.4">2.1.4 算法</option>
+                                <option value="2.1.5">2.1.5 数学与其他</option>
+                                <option value="2.2">2.2 提高级</option>
+                                <option value="2.2.1">2.2.1 基础知识与编程环境</option>
+                                <option value="2.2.2">2.2.2 C++程序设计</option>
+                                <option value="2.2.3">2.2.3 数据结构</option>
+                                <option value="2.2.4">2.2.4 算法</option>
+                                <option value="2.2.5">2.2.5 数学与其他</option>
+                                <option value="2.3">2.3 NOI级</option>
+                                <option value="2.3.1">2.3.1 C++程序设计</option>
+                                <option value="2.3.2">2.3.2 数据结构</option>
+                                <option value="2.3.3">2.3.3 算法</option>
+                                <option value="2.3.4">2.3.4 数学与其他</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quizQuestionCount" class="form-label">题目数量</label>
+                            <input type="number" class="form-control" id="quizQuestionCountInput" value="10" min="1" max="20">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveQuizBtn">创建测试</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/outline.js"></script>
 </body>
 </html> 

@@ -1,0 +1,14 @@
+{
+  "1-1": {
+    "id": 1,
+    "user_id": 1,
+    "problem_id": 1,
+    "attempted": true,
+    "solved": false,
+    "failed_attempts": 1,
+    "last_attempt_at": "2025-03-05T20:27:20.678425+08:00",
+    "first_solved_at": "0001-01-01T00:00:00Z",
+    "created_at": "2025-03-05T20:27:23.424806+08:00",
+    "updated_at": "2025-03-05T20:27:23.424806+08:00"
+  }
+}

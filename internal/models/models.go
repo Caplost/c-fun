@@ -74,3 +74,55 @@ type UserProblemStatus struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
+
+// 题目类型常量
+const (
+	QuestionTypeMultipleChoice = "multiple_choice" // 选择题
+	QuestionTypeFillBlank      = "fill_blank"      // 填空题
+	QuestionTypeShortAnswer    = "short_answer"    // 简答题
+)
+
+// OutlineQuestion 表示根据大纲生成的题目
+type OutlineQuestion struct {
+	ID           int       `json:"id"`
+	Type         string    `json:"type"`          // 题目类型: multiple_choice, fill_blank, short_answer
+	Difficulty   int       `json:"difficulty"`    // 难度等级 1-10
+	Content      string    `json:"content"`       // 题目内容
+	Options      []string  `json:"options"`       // 选择题选项
+	Answer       string    `json:"answer"`        // 正确答案
+	Explanation  string    `json:"explanation"`   // 答案解释
+	KnowledgeTag []string  `json:"knowledge_tag"` // 关联的知识点
+	OutlineRef   string    `json:"outline_ref"`   // 大纲参考，例如："2.1.2"
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// QuizSubmission 表示用户提交的答题结果
+type QuizSubmission struct {
+	ID         int       `json:"id"`
+	UserID     int       `json:"user_id"`
+	QuestionID int       `json:"question_id"`
+	Answer     string    `json:"answer"`     // 用户的答案
+	IsCorrect  bool      `json:"is_correct"` // 是否正确
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+// Quiz 表示一次测试，包含多个题目
+type Quiz struct {
+	ID           int       `json:"id"`
+	Title        string    `json:"title"`         // 测试标题
+	Description  string    `json:"description"`   // 测试描述
+	QuestionIDs  []int     `json:"question_ids"`  // 包含的题目ID
+	KnowledgeTag []string  `json:"knowledge_tag"` // 关联的知识点
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// QuizResult 表示用户完成的测试结果
+type QuizResult struct {
+	ID            int       `json:"id"`
+	UserID        int       `json:"user_id"`
+	QuizID        int       `json:"quiz_id"`
+	SubmissionIDs []int     `json:"submission_ids"` // 相关的提交ID
+	Score         float64   `json:"score"`          // 得分
+	CompletedAt   time.Time `json:"completed_at"`
+	CreatedAt     time.Time `json:"created_at"`
+}

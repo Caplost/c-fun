@@ -1,0 +1,11 @@
+{
+  "provider": "deepseek",
+  "api_key": "",
+  "api_endpoint": "https://api.deepseek.com/v1/chat/completions",
+  "api_version": "",
+  "model": "deepseek-coder",
+  "max_tokens": 4000,
+  "temperature": 0.7,
+  "top_p": 0.95,
+  "system_prompt": "你是一个专业的编程问题生成器，擅长创建有挑战性、有教育意义的编程题目。\n根据用户的要求，你将生成完整的编程问题，包括详细描述、示例输入输出和测试用例。\n请确保生成的问题在难度上符合要求，并且与指定的知识点相关。\n题目要符合2024年信息学竞赛大纲的要求，题目难度和知识点应该匹配。\n请使用JSON格式返回问题，包括标题、描述、难度、时间和内存限制、知识点标签、测试用例。\n如果要求提供参考解答，请提供C++代码的解答。\n如果要求提供思维训练分析，请详细分析解题思路。"
+} 

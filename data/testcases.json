@@ -62,5 +62,14 @@
       "output": "测试输出",
       "is_example": true
     }
+  ],
+  "6": [
+    {
+      "id": 9,
+      "problem_id": 6,
+      "input": "输入样例",
+      "output": "输出样例",
+      "is_example": true
+    }
   ]
 }

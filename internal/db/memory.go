@@ -2,6 +2,8 @@ package db
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,28 +13,62 @@ import (
 
 // MemoryStore is a simple in-memory database implementation
 type MemoryStore struct {
-	mu               sync.RWMutex
-	users            map[int]models.User
-	submissions      map[int]models.Submission
-	testResults      map[int]models.TestResult
-	problemStore     *data.InMemoryProblemStore           // 使用带持久化功能的问题存储
-	userProblemStore *data.InMemoryUserProblemStatusStore // 用户题目状态存储
-	nextUserID       int
-	nextSubmitID     int
-	nextResultID     int
+	mu                       sync.RWMutex
+	users                    map[int]models.User
+	submissions              map[int]models.Submission
+	testResults              map[int]models.TestResult
+	problemStore             *data.InMemoryProblemStore           // 使用带持久化功能的问题存储
+	userProblemStore         *data.InMemoryUserProblemStatusStore // 用户题目状态存储
+	nextUserID               int
+	nextSubmitID             int
+	nextResultID             int
+	problems                 map[int]*models.Problem
+	testCases                map[int]*models.TestCase
+	userProblemStatus        map[int]*models.UserProblemStatus
+	outlineQuestions         map[int]*models.OutlineQuestion
+	quizzes                  map[int]*models.Quiz
+	quizSubmissions          map[int]*models.QuizSubmission
+	quizResults              map[int]*models.QuizResult
+	userIDCounter            int
+	problemIDCounter         int
+	testCaseIDCounter        int
+	submissionIDCounter      int
+	testResultIDCounter      int
+	userProblemStatusCounter int
+	outlineQuestionCounter   int
+	quizCounter              int
+	quizSubmissionCounter    int
+	quizResultCounter        int
 }
 
 // NewMemoryStore creates a new in-memory database
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{
-		users:            make(map[int]models.User),
-		submissions:      make(map[int]models.Submission),
-		testResults:      make(map[int]models.TestResult),
-		problemStore:     data.NewInMemoryProblemStore(),           // 初始化持久化问题存储
-		userProblemStore: data.NewInMemoryUserProblemStatusStore(), // 初始化用户题目状态存储
-		nextUserID:       1,
-		nextSubmitID:     1,
-		nextResultID:     1,
+		users:                    make(map[int]models.User),
+		submissions:              make(map[int]models.Submission),
+		testResults:              make(map[int]models.TestResult),
+		problemStore:             data.NewInMemoryProblemStore(),           // 初始化持久化问题存储
+		userProblemStore:         data.NewInMemoryUserProblemStatusStore(), // 初始化用户题目状态存储
+		nextUserID:               1,
+		nextSubmitID:             1,
+		nextResultID:             1,
+		problems:                 make(map[int]*models.Problem),
+		testCases:                make(map[int]*models.TestCase),
+		userProblemStatus:        make(map[int]*models.UserProblemStatus),
+		outlineQuestions:         make(map[int]*models.OutlineQuestion),
+		quizzes:                  make(map[int]*models.Quiz),
+		quizSubmissions:          make(map[int]*models.QuizSubmission),
+		quizResults:              make(map[int]*models.QuizResult),
+		userIDCounter:            1,
+		problemIDCounter:         1,
+		testCaseIDCounter:        1,
+		submissionIDCounter:      1,
+		testResultIDCounter:      1,
+		userProblemStatusCounter: 1,
+		outlineQuestionCounter:   1,
+		quizCounter:              1,
+		quizSubmissionCounter:    1,
+		quizResultCounter:        1,
 	}
 }
 
@@ -489,4 +525,321 @@ func (s *MemoryStore) UpdateUserProblemStatus(status models.UserProblemStatus) (
 		CreatedAt:      result.CreatedAt,
 		UpdatedAt:      result.UpdatedAt,
 	}, nil
+}
+
+// AddOutlineQuestion 添加一个新的大纲题目
+func (s *MemoryStore) AddOutlineQuestion(question models.OutlineQuestion) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	question.ID = s.outlineQuestionCounter
+	question.CreatedAt = time.Now()
+	s.outlineQuestions[question.ID] = &question
+	s.outlineQuestionCounter++
+
+	return question.ID, nil
+}
+
+// UpdateOutlineQuestion 更新现有的大纲题目
+func (s *MemoryStore) UpdateOutlineQuestion(question models.OutlineQuestion) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.outlineQuestions[question.ID]; !exists {
+		return fmt.Errorf("题目不存在: ID=%d", question.ID)
+	}
+
+	s.outlineQuestions[question.ID] = &question
+	return nil
+}
+
+// GetOutlineQuestion 获取指定ID的大纲题目
+func (s *MemoryStore) GetOutlineQuestion(id int) (*models.OutlineQuestion, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	question, exists := s.outlineQuestions[id]
+	if !exists {
+		return nil, fmt.Errorf("题目不存在: ID=%d", id)
+	}
+
+	return question, nil
+}
+
+// GetAllOutlineQuestions 获取所有大纲题目
+func (s *MemoryStore) GetAllOutlineQuestions() ([]*models.OutlineQuestion, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	questions := make([]*models.OutlineQuestion, 0, len(s.outlineQuestions))
+	for _, question := range s.outlineQuestions {
+		questions = append(questions, question)
+	}
+
+	return questions, nil
+}
+
+// GetOutlineQuestionsByTags 根据标签获取大纲题目
+func (s *MemoryStore) GetOutlineQuestionsByTags(tags []string) ([]*models.OutlineQuestion, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if len(tags) == 0 {
+		return s.GetAllOutlineQuestions()
+	}
+
+	questions := make([]*models.OutlineQuestion, 0)
+	for _, question := range s.outlineQuestions {
+		// 检查题目是否包含任何一个标签
+		for _, tag := range tags {
+			found := false
+			for _, qtag := range question.KnowledgeTag {
+				if qtag == tag {
+					found = true
+					break
+				}
+			}
+			if found {
+				questions = append(questions, question)
+				break
+			}
+		}
+	}
+
+	return questions, nil
+}
+
+// GetOutlineQuestionsBySection 根据大纲章节获取题目
+func (s *MemoryStore) GetOutlineQuestionsBySection(section string) ([]*models.OutlineQuestion, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	questions := make([]*models.OutlineQuestion, 0)
+	for _, question := range s.outlineQuestions {
+		if strings.HasPrefix(question.OutlineRef, section) {
+			questions = append(questions, question)
+		}
+	}
+
+	return questions, nil
+}
+
+// DeleteOutlineQuestion 删除指定ID的大纲题目
+func (s *MemoryStore) DeleteOutlineQuestion(id int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.outlineQuestions[id]; !exists {
+		return fmt.Errorf("题目不存在: ID=%d", id)
+	}
+
+	delete(s.outlineQuestions, id)
+	return nil
+}
+
+// AddQuiz 添加一个新的测试
+func (s *MemoryStore) AddQuiz(quiz models.Quiz) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	quiz.ID = s.quizCounter
+	quiz.CreatedAt = time.Now()
+	s.quizzes[quiz.ID] = &quiz
+	s.quizCounter++
+
+	return quiz.ID, nil
+}
+
+// UpdateQuiz 更新现有的测试
+func (s *MemoryStore) UpdateQuiz(quiz models.Quiz) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.quizzes[quiz.ID]; !exists {
+		return fmt.Errorf("测试不存在: ID=%d", quiz.ID)
+	}
+
+	s.quizzes[quiz.ID] = &quiz
+	return nil
+}
+
+// GetQuiz 获取指定ID的测试
+func (s *MemoryStore) GetQuiz(id int) (*models.Quiz, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	quiz, exists := s.quizzes[id]
+	if !exists {
+		return nil, fmt.Errorf("测试不存在: ID=%d", id)
+	}
+
+	return quiz, nil
+}
+
+// GetAllQuizzes 获取所有测试
+func (s *MemoryStore) GetAllQuizzes() ([]*models.Quiz, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	quizzes := make([]*models.Quiz, 0, len(s.quizzes))
+	for _, quiz := range s.quizzes {
+		quizzes = append(quizzes, quiz)
+	}
+
+	return quizzes, nil
+}
+
+// GetQuizzesByTags 根据标签获取测试
+func (s *MemoryStore) GetQuizzesByTags(tags []string) ([]*models.Quiz, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if len(tags) == 0 {
+		return s.GetAllQuizzes()
+	}
+
+	quizzes := make([]*models.Quiz, 0)
+	for _, quiz := range s.quizzes {
+		// 检查测试是否包含任何一个标签
+		for _, tag := range tags {
+			found := false
+			for _, qtag := range quiz.KnowledgeTag {
+				if qtag == tag {
+					found = true
+					break
+				}
+			}
+			if found {
+				quizzes = append(quizzes, quiz)
+				break
+			}
+		}
+	}
+
+	return quizzes, nil
+}
+
+// DeleteQuiz 删除指定ID的测试
+func (s *MemoryStore) DeleteQuiz(id int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.quizzes[id]; !exists {
+		return fmt.Errorf("测试不存在: ID=%d", id)
+	}
+
+	delete(s.quizzes, id)
+	return nil
+}
+
+// AddQuizSubmission 添加一个测试提交
+func (s *MemoryStore) AddQuizSubmission(submission models.QuizSubmission) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	submission.ID = s.quizSubmissionCounter
+	submission.CreatedAt = time.Now()
+	s.quizSubmissions[submission.ID] = &submission
+	s.quizSubmissionCounter++
+
+	return submission.ID, nil
+}
+
+// GetQuizSubmission 获取指定ID的测试提交
+func (s *MemoryStore) GetQuizSubmission(id int) (*models.QuizSubmission, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	submission, exists := s.quizSubmissions[id]
+	if !exists {
+		return nil, fmt.Errorf("测试提交不存在: ID=%d", id)
+	}
+
+	return submission, nil
+}
+
+// GetQuizSubmissionsByUser 获取指定用户的所有测试提交
+func (s *MemoryStore) GetQuizSubmissionsByUser(userID int) ([]*models.QuizSubmission, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	submissions := make([]*models.QuizSubmission, 0)
+	for _, submission := range s.quizSubmissions {
+		if submission.UserID == userID {
+			submissions = append(submissions, submission)
+		}
+	}
+
+	return submissions, nil
+}
+
+// GetQuizSubmissionsByQuestion 获取指定题目的所有测试提交
+func (s *MemoryStore) GetQuizSubmissionsByQuestion(questionID int) ([]*models.QuizSubmission, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	submissions := make([]*models.QuizSubmission, 0)
+	for _, submission := range s.quizSubmissions {
+		if submission.QuestionID == questionID {
+			submissions = append(submissions, submission)
+		}
+	}
+
+	return submissions, nil
+}
+
+// AddQuizResult 添加一个测试结果
+func (s *MemoryStore) AddQuizResult(result models.QuizResult) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result.ID = s.quizResultCounter
+	result.CreatedAt = time.Now()
+	s.quizResults[result.ID] = &result
+	s.quizResultCounter++
+
+	return result.ID, nil
+}
+
+// GetQuizResult 获取指定ID的测试结果
+func (s *MemoryStore) GetQuizResult(id int) (*models.QuizResult, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	result, exists := s.quizResults[id]
+	if !exists {
+		return nil, fmt.Errorf("测试结果不存在: ID=%d", id)
+	}
+
+	return result, nil
+}
+
+// GetQuizResultsByUser 获取指定用户的所有测试结果
+func (s *MemoryStore) GetQuizResultsByUser(userID int) ([]*models.QuizResult, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	results := make([]*models.QuizResult, 0)
+	for _, result := range s.quizResults {
+		if result.UserID == userID {
+			results = append(results, result)
+		}
+	}
+
+	return results, nil
+}
+
+// GetQuizResultsByQuiz 获取指定测试的所有结果
+func (s *MemoryStore) GetQuizResultsByQuiz(quizID int) ([]*models.QuizResult, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	results := make([]*models.QuizResult, 0)
+	for _, result := range s.quizResults {
+		if result.QuizID == quizID {
+			results = append(results, result)
+		}
+	}
+
+	return results, nil
 }

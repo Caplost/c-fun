@@ -27,10 +27,120 @@ func SetupRoutes(handler *Handler) *http.ServeMux {
 		}
 	})
 
+	// AI生成题目路由
+	mux.HandleFunc("/api/problems/generate", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			handler.GenerateAIProblem(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// 保存生成的题目路由
+	mux.HandleFunc("/api/problems/save-generated", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			handler.SaveGeneratedProblem(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// 大纲知识点获取路由
+	mux.HandleFunc("/api/outline/knowledge-points", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			handler.GetOutlineKnowledgePoints(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
 	// 带用户状态的所有题目路由
 	mux.HandleFunc("/api/problems/status", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			handler.GetAllProblemsWithStatus(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// 大纲解析路由
+	mux.HandleFunc("/api/outline/parse", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			handler.ParseOutline(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// 生成大纲题目路由
+	mux.HandleFunc("/api/outline/generate", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			handler.GenerateOutlineQuestions(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// 测试相关路由
+	mux.HandleFunc("/api/quizzes", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			handler.GetAllQuizzes(w, r)
+		} else if r.Method == http.MethodPost {
+			handler.CreateQuiz(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// 测试详情路由
+	mux.HandleFunc("/api/quizzes/", func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimPrefix(r.URL.Path, "/api/quizzes/")
+
+		// 处理提交答案
+		if strings.HasSuffix(path, "/submit") {
+			if r.Method == http.MethodPost {
+				handler.SubmitQuizAnswer(w, r)
+			} else {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+			}
+			return
+		}
+
+		// 处理获取测试结果
+		if strings.HasSuffix(path, "/results") {
+			if r.Method == http.MethodGet {
+				handler.GetQuizResults(w, r)
+			} else {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+			}
+			return
+		}
+
+		// 获取测试详情
+		if r.Method == http.MethodGet {
+			handler.GetQuiz(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// 用户测试结果路由
+	mux.HandleFunc("/api/users/", func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimPrefix(r.URL.Path, "/api/users/")
+
+		// 处理获取用户测试结果
+		if strings.HasSuffix(path, "/quizzes") {
+			if r.Method == http.MethodGet {
+				handler.GetUserQuizResults(w, r)
+			} else {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+			}
+			return
+		}
+
+		// 原有用户相关路由
+		if r.Method == http.MethodGet {
+			handler.GetUser(w, r)
 		} else {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -106,14 +216,6 @@ func SetupRoutes(handler *Handler) *http.ServeMux {
 	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			handler.RegisterUser(w, r)
-		} else {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	})
-
-	mux.HandleFunc("/api/users/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			handler.GetUser(w, r)
 		} else {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}

@@ -6,6 +6,7 @@
     "difficulty": "Easy",
     "time_limit": 1000,
     "memory_limit": 65536,
+    "knowledge_tag": null,
     "created_at": "2025-02-27T19:52:22.572747+08:00"
   },
   "2": {
@@ -15,6 +16,7 @@
     "difficulty": "Easy",
     "time_limit": 500,
     "memory_limit": 32768,
+    "knowledge_tag": null,
     "created_at": "2025-02-27T19:52:22.572766+08:00"
   },
   "3": {
@@ -24,6 +26,7 @@
     "difficulty": "Medium",
     "time_limit": 800,
     "memory_limit": 49152,
+    "knowledge_tag": null,
     "created_at": "2025-02-27T19:52:22.572774+08:00"
   },
   "4": {
@@ -33,6 +36,7 @@
     "difficulty": "Easy",
     "time_limit": 1000,
     "memory_limit": 65536,
+    "knowledge_tag": null,
     "created_at": "2025-02-27T19:52:42.635751+08:00"
   },
   "5": {
@@ -42,6 +46,17 @@
     "difficulty": "Easy",
     "time_limit": 1000,
     "memory_limit": 65536,
+    "knowledge_tag": null,
     "created_at": "2025-02-27T19:55:57.734828+08:00"
+  },
+  "6": {
+    "id": 6,
+    "title": "示例题目",
+    "description": "题目描述...",
+    "difficulty": "Medium",
+    "time_limit": 1000,
+    "memory_limit": 65536,
+    "knowledge_tag": null,
+    "created_at": "2025-03-05T21:19:29.845835+08:00"
   }
 }
