@@ -51,17 +51,21 @@ func ParseOutlineFile(filePath string) ([]OutlineItem, error) {
 	lines := strings.Split(string(data), "\n")
 	var items []OutlineItem
 
+	// 正则表达式
+	numListRegex := regexp.MustCompile(`^(\d+)\. `)
+	difficultyRegex := regexp.MustCompile(`【(\d+)】`)
+	bulletListRegex := regexp.MustCompile(`^- `)
+	indentedListRegex := regexp.MustCompile(`^   - `)
+
 	// 解析行
 	var currentMainSection string // 如 "2.1"
-	// var currentMainTitle string   // 注释掉未使用的变量
-	var currentSubSection string // 如 "2.1.1"
-	var currentSubTitle string   // 如 "基础知识与编程环境"
-	// var currentItemNumber string  // 注释掉未使用的变量
-	var currentItemTitle string // 如 "计算机的基本构成"
-	// var inSublist bool = false    // 注释掉未使用的变量
+	var currentMainTitle string   // 如 "入门级"
+	var currentSubSection string  // 如 "2.1.1"
+	var currentSubTitle string    // 如 "基础知识与编程环境"
+	var currentParentItem string  // 子列表的父条目，如 "程序基本概念"
 	var currentDifficulty int = 1 // 当前知识点难度
 
-	for _, line := range lines {
+	for i, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -73,7 +77,8 @@ func ParseOutlineFile(filePath string) ([]OutlineItem, error) {
 			parts := strings.SplitN(section, " ", 2)
 			if len(parts) == 2 {
 				currentMainSection = parts[0]
-				// currentMainTitle = parts[1] // 注释掉未使用的赋值
+				currentMainTitle = parts[1]
+				log.Printf("解析到主章节: %s %s", currentMainSection, currentMainTitle)
 			}
 			continue
 		}
@@ -85,54 +90,65 @@ func ParseOutlineFile(filePath string) ([]OutlineItem, error) {
 			if len(parts) == 2 {
 				currentSubSection = parts[0]
 				currentSubTitle = parts[1]
+				log.Printf("解析到子章节: %s %s", currentSubSection, currentSubTitle)
 			}
 			continue
 		}
 
 		// 解析编号条目 (数字+点开头)
-		if match, _ := regexp.MatchString(`^\d+\. `, line); match {
-			// inSublist = false // 注释掉未使用的赋值
-			parts := strings.SplitN(line, ". ", 2)
-			if len(parts) == 2 {
-				// currentItemNumber = parts[0] // 注释掉未使用的赋值
-				currentItemTitle = parts[1]
+		if numListRegex.MatchString(line) {
+			parts := numListRegex.FindStringSubmatch(line)
+			if len(parts) > 1 {
+				// 提取编号后的内容
+				content := numListRegex.ReplaceAllString(line, "")
 
 				// 提取难度级别 【x】
-				difficultyMatch := regexp.MustCompile(`【(\d+)】`).FindStringSubmatch(currentItemTitle)
-				if len(difficultyMatch) > 1 {
-					currentDifficulty, _ = strconv.Atoi(difficultyMatch[1])
-					// 去掉难度标记，只保留标题
-					currentItemTitle = strings.TrimSpace(regexp.MustCompile(`【\d+】`).ReplaceAllString(currentItemTitle, ""))
+				var difficultyStr string
+				if matches := difficultyRegex.FindStringSubmatch(content); len(matches) > 1 {
+					difficultyStr = matches[1]
+					currentDifficulty, _ = strconv.Atoi(difficultyStr)
+					// 去掉难度标记，只保留内容
+					content = difficultyRegex.ReplaceAllString(content, "")
+					content = strings.TrimSpace(content)
 				}
 
-				// 如果不是子列表的父条目，创建知识点
-				if !strings.HasSuffix(currentItemTitle, ":") && !strings.Contains(currentItemTitle, "（") && !strings.Contains(currentItemTitle, "(") {
+				// 记录当前父条目
+				currentParentItem = content
+
+				// 只有当条目不是子列表的父条目时才添加为知识点
+				if !strings.HasSuffix(content, ":") && i+1 < len(lines) && !indentedListRegex.MatchString(strings.TrimSpace(lines[i+1])) {
 					item := OutlineItem{
 						Section:    currentSubSection,
 						Title:      currentSubTitle,
-						Knowledge:  currentItemTitle,
+						Knowledge:  content,
 						Difficulty: currentDifficulty,
-						Tags:       []string{},
-						Path:       fmt.Sprintf("%s.%s.%s", currentMainSection, currentSubTitle, currentItemTitle),
+						Tags:       []string{currentMainTitle},
+						Path:       fmt.Sprintf("%s.%s.%s", currentMainSection, currentSubTitle, content),
 					}
 					items = append(items, item)
+					log.Printf("解析到编号知识点: %s (难度: %d)", content, currentDifficulty)
 				}
 			}
 			continue
 		}
 
-		// 解析子列表条目 (- 开头)
-		if strings.HasPrefix(line, "- ") {
-			// inSublist = true // 注释掉未使用的赋值
-			content := strings.TrimPrefix(line, "- ")
+		// 解析一级列表 (- 开头)
+		if bulletListRegex.MatchString(line) && !indentedListRegex.MatchString(line) {
+			content := bulletListRegex.ReplaceAllString(line, "")
 
 			// 提取难度级别 【x】
-			difficultyMatch := regexp.MustCompile(`【(\d+)】`).FindStringSubmatch(content)
 			itemDifficulty := currentDifficulty
-			if len(difficultyMatch) > 1 {
-				itemDifficulty, _ = strconv.Atoi(difficultyMatch[1])
+			if matches := difficultyRegex.FindStringSubmatch(content); len(matches) > 1 {
+				difficultyStr := matches[1]
+				itemDifficulty, _ = strconv.Atoi(difficultyStr)
 				// 去掉难度标记，只保留内容
-				content = strings.TrimSpace(regexp.MustCompile(`【\d+】`).ReplaceAllString(content, ""))
+				content = difficultyRegex.ReplaceAllString(content, "")
+				content = strings.TrimSpace(content)
+			}
+
+			tags := []string{currentMainTitle}
+			if currentParentItem != "" {
+				tags = append(tags, currentParentItem)
 			}
 
 			item := OutlineItem{
@@ -140,10 +156,43 @@ func ParseOutlineFile(filePath string) ([]OutlineItem, error) {
 				Title:      currentSubTitle,
 				Knowledge:  content,
 				Difficulty: itemDifficulty,
-				Tags:       []string{currentItemTitle},
+				Tags:       tags,
 				Path:       fmt.Sprintf("%s.%s.%s", currentMainSection, currentSubTitle, content),
 			}
 			items = append(items, item)
+			log.Printf("解析到列表知识点: %s (难度: %d, 标签: %v)", content, itemDifficulty, tags)
+			continue
+		}
+
+		// 解析二级列表 (缩进的 - 开头)
+		if indentedListRegex.MatchString(line) {
+			content := indentedListRegex.ReplaceAllString(line, "")
+
+			// 提取难度级别 【x】
+			itemDifficulty := currentDifficulty
+			if matches := difficultyRegex.FindStringSubmatch(content); len(matches) > 1 {
+				difficultyStr := matches[1]
+				itemDifficulty, _ = strconv.Atoi(difficultyStr)
+				// 去掉难度标记，只保留内容
+				content = difficultyRegex.ReplaceAllString(content, "")
+				content = strings.TrimSpace(content)
+			}
+
+			tags := []string{currentMainTitle}
+			if currentParentItem != "" {
+				tags = append(tags, currentParentItem)
+			}
+
+			item := OutlineItem{
+				Section:    currentSubSection,
+				Title:      currentSubTitle,
+				Knowledge:  content,
+				Difficulty: itemDifficulty,
+				Tags:       tags,
+				Path:       fmt.Sprintf("%s.%s.%s.%s", currentMainSection, currentSubTitle, currentParentItem, content),
+			}
+			items = append(items, item)
+			log.Printf("解析到二级列表知识点: %s (难度: %d, 标签: %v)", content, itemDifficulty, tags)
 			continue
 		}
 	}
