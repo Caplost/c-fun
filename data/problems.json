@@ -62,6 +62,22 @@
     "thinking_analysis": "解题思路：\n1. 理解总线带宽公式：带宽 = (数据总线宽度/8) * 时钟频率 * 传输次数\n2. 单位转换：位→字节（/8），MHz→Hz（*1e6），最终结果单位为MB/s（1e6字节/秒）\n3. 注意浮点数精度处理：必须使用8.0进行除法运算\n4. 常见错误点：\n   - 忘记位到字节的转换\n   - 整数除法导致精度丢失\n   - 输出格式不符合两位小数要求",
     "created_at": "2025-03-06T16:00:19.735456+08:00"
   },
+  "13": {
+    "id": 13,
+    "title": "CPU指令模拟运算",
+    "description": "模拟一个简化的CPU运算器执行指令的过程。CPU包含一个4位寄存器R，初始值为0。指令系统包含以下操作：\n1. ADD x: R = (R + x) mod 16\n2. XOR x: R = R XOR x\n3. SHL: R左移1位，空位补0（相当于乘以2模16）\n4. SHR: R右移1位，空位补0（相当于整除2）\n\n输入格式：\n第一行n表示指令数（1≤n≤1e5）\n接下来n行每行一个指令\n\n输出格式：\n输出最终寄存器R的值（0-15的十进制数）\n\n数据范围：\n所有x均为0-15的整数\nSHL/SHR指令不带参数",
+    "difficulty": "Medium",
+    "time_limit": 1000,
+    "memory_limit": 262144,
+    "knowledge_tag": [
+      "计算机基本构成",
+      "位运算",
+      "模拟"
+    ],
+    "reference_solution": "#include \u003ciostream\u003e\nusing namespace std;\n\nint main() {\n    int n, R = 0;\n    cin \u003e\u003e n;\n    while(n--) {\n        string cmd;\n        cin \u003e\u003e cmd;\n        if(cmd == \"ADD\") {\n            int x; cin \u003e\u003e x;\n            R = (R + x) % 16;\n        } \n        else if(cmd == \"XOR\") {\n            int x; cin \u003e\u003e x;\n            R ^= x;\n        }\n        else if(cmd == \"SHL\") {\n            R = (R \u003c\u003c 1) % 16;\n        }\n        else if(cmd == \"SHR\") {\n            R \u003e\u003e= 1;\n        }\n    }\n    cout \u003c\u003c R \u003c\u003c endl;\n    return 0;\n}",
+    "thinking_analysis": "本题考察对计算机基本运算部件的理解。解题关键点包括：\n1. 寄存器状态的维护：使用整型变量模拟4位寄存器，注意模16运算\n2. 指令解析：通过字符串处理识别不同指令类型\n3. 位运算实现：\n   - XOR直接使用^运算符\n   - SHL需要左移后取模处理溢出\n   - SHR直接使用右移运算符\n4. 效率优化：由于n可达1e5，必须使用O(n)算法，避免不必要的操作\n5. 边界处理：特别注意移位操作后的取值范围（0-15）\n\n本题将计算机组成原理中的指令执行过程与位运算数学操作相结合，既考察基础概念，又检验编程实现能力。",
+    "created_at": "2025-03-06T18:32:47.78125+08:00"
+  },
   "2": {
     "id": 2,
     "title": "回文数",

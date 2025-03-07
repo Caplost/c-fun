@@ -161,6 +161,9 @@ func (h *Handler) GetOutlineKnowledgePoints(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// 记录请求信息
+	log.Printf("接收到查询章节 %s 的知识点请求", sectionID)
+
 	// 解析大纲文件
 	items, err := utils.GetKnowledgePointsBySection(utils.GetDefaultOutlinePath(), sectionID)
 	if err != nil {
@@ -169,8 +172,40 @@ func (h *Handler) GetOutlineKnowledgePoints(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// 记录结果信息
+	log.Printf("为章节 %s 找到 %d 个知识点", sectionID, len(items))
+
+	// 在日志中输出前 5 个知识点内容示例
+	sampleCount := 5
+	if len(items) < sampleCount {
+		sampleCount = len(items)
+	}
+
+	for i := 0; i < sampleCount; i++ {
+		log.Printf("知识点示例 %d: 章节=%s, 标题=%s, 知识点=%s, 难度=%d",
+			i+1, items[i].Section, items[i].Title, items[i].Knowledge, items[i].Difficulty)
+	}
+
+	// 计算返回分组信息
+	sectionCount := make(map[string]int)
+	for _, item := range items {
+		sectionCount[item.Section]++
+	}
+
+	// 返回带有分组信息的结果
+	response := map[string]interface{}{
+		"knowledge_points": items,
+		"section_id":       sectionID,
+		"total_count":      len(items),
+		"section_stats":    sectionCount,
+	}
+
+	// 记录输出内容
+	responseJSON, _ := json.MarshalIndent(response, "", "  ")
+	log.Printf("返回知识点数据结构: %s", string(responseJSON))
+
 	// 返回结果
-	respondJSON(w, http.StatusOK, items)
+	respondJSON(w, http.StatusOK, response)
 }
 
 // SaveGeneratedProblem 保存生成的题目

@@ -177,16 +177,35 @@ function renderProblems(problems) {
             statusText = '尝试中';
         }
         
-        row.innerHTML = `
+        // 检查是否为AI生成的题目（通过检查knowledge_tag是否存在且不为空）
+        const isAIGenerated = problem.knowledge_tag && problem.knowledge_tag.length > 0;
+        
+        // 基本的题目信息HTML
+        let problemHTML = `
             <td>${problem.id}</td>
             <td>
                 <a href="#problem-${problem.id}" class="problem-link" data-problem-id="${problem.id}">
                     ${problem.title}
-                </a>
+                </a>`;
+                
+        // 如果是AI生成的题目，添加知识点标签
+        if (isAIGenerated) {
+            problemHTML += `
+                <div class="mt-1 small problem-knowledge-tags">
+                    <strong>知识点:</strong> 
+                    ${problem.knowledge_tag.map(tag => 
+                        `<span class="badge bg-secondary me-1">${tag}</span>`
+                    ).join(' ')}
+                </div>`;
+        }
+        
+        problemHTML += `
             </td>
             <td>${problem.difficulty}</td>
             <td><span class="status-indicator ${statusClass}"></span> ${statusText}</td>
         `;
+        
+        row.innerHTML = problemHTML;
         
         // 添加点击事件
         const problemLink = row.querySelector('.problem-link');
@@ -740,11 +759,10 @@ function showGenerateAIProblemModal() {
                         
                         <div class="mb-3">
                             <label class="form-label">知识点</label>
-                            <div class="mb-2 d-flex justify-content-between">
+                            <div class="mb-2">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshKnowledgePoints">刷新知识点</button>
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="toggleAllKnowledgePoints">全选/取消全选</button>
                             </div>
-                            <div id="knowledgePointsContainer" class="border p-2" style="max-height: 300px; overflow-y: auto;">
+                            <div id="knowledgePointsContainer" class="border p-2" style="max-height: 200px; overflow-y: auto;">
                                 <div class="d-flex justify-content-center">
                                     <div class="spinner-border spinner-border-sm" role="status">
                                         <span class="visually-hidden">Loading...</span>
@@ -770,12 +788,8 @@ function showGenerateAIProblemModal() {
                                 <label class="form-check-label" for="typeAlgorithm">算法题</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="problemType" id="typeDataStructure" value="DataStructure">
-                                <label class="form-check-label" for="typeDataStructure">数据结构题</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="problemType" id="typeMath" value="Math">
-                                <label class="form-check-label" for="typeMath">数学题</label>
+                                <input class="form-check-input" type="radio" name="problemType" id="typePractical" value="Practical">
+                                <label class="form-check-label" for="typePractical">实际应用题</label>
                             </div>
                         </div>
                         
@@ -830,50 +844,41 @@ function showGenerateAIProblemModal() {
                         <div class="card mb-3">
                             <div class="card-header">题目预览</div>
                             <div class="card-body">
-                                <h5 id="previewTitle"></h5>
-                                <div class="mb-2">
-                                    <span class="badge bg-primary me-1" id="previewDifficulty"></span>
-                                    <span class="text-muted" id="previewLimits"></span>
+                                <h5 id="previewTitle" class="card-title"></h5>
+                                <div class="d-flex justify-content-between">
+                                    <p class="card-text"><strong>难度:</strong> <span id="previewDifficulty"></span></p>
+                                    <p class="card-text" id="previewLimits"></p>
                                 </div>
-                                <div id="previewDescription"></div>
-                                <h6 class="mt-3">示例:</h6>
-                                <div id="previewExamples"></div>
-                                <h6 class="mt-3">知识点:</h6>
-                                <div id="previewTags"></div>
+                                <hr>
+                                <h6>题目描述:</h6>
+                                <div id="previewDescription" class="mb-3"></div>
+                                
+                                <h6>示例:</h6>
+                                <div id="previewExamples" class="mb-3"></div>
+                                
+                                <h6>知识点标签:</h6>
+                                <div id="previewTags" class="mb-3"></div>
                             </div>
-                        </div>
-                        
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-primary" id="saveGeneratedProblemBtn">保存到题库</button>
-                            <button class="btn btn-outline-secondary" id="regenerateProblemBtn">重新生成</button>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer" id="generateModalFooter">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-primary" id="startGenerateBtn">生成题目</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-outline-secondary" id="regenerateProblemBtn" style="display: none;">重新生成</button>
+                    <button type="button" class="btn btn-primary" id="startGenerateBtn">开始生成</button>
+                    <button type="button" class="btn btn-success" id="saveGeneratedProblemBtn" style="display: none;" disabled>保存到题库</button>
                 </div>
             </div>
         </div>
     `;
     
-    // 移除现有的模态框（如果有）
-    const existingModal = document.getElementById('generateAIProblemModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
-    // 添加新的模态框
     document.body.appendChild(modal);
     
-    // 初始化Bootstrap模态框
-    const generateModal = new bootstrap.Modal(modal);
-    generateModal.show();
+    // 初始化模态框
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
     
-    // 加载知识点
-    loadKnowledgePoints();
-    
-    // 添加刷新知识点按钮事件监听器
+    // 绑定事件处理
     const refreshKnowledgePointsBtn = document.getElementById('refreshKnowledgePoints');
     if (refreshKnowledgePointsBtn) {
         refreshKnowledgePointsBtn.addEventListener('click', () => {
@@ -884,13 +889,15 @@ function showGenerateAIProblemModal() {
     // 添加大纲章节变更事件监听
     const outlineSection = document.getElementById('outlineSection');
     if (outlineSection) {
+        // 移除已有的事件监听器，防止重复监听
+        outlineSection.removeEventListener('change', loadKnowledgePoints);
+        // 添加新的事件监听器
         outlineSection.addEventListener('change', loadKnowledgePoints);
-    }
-    
-    // 添加全选/取消全选按钮的事件监听
-    const toggleAllKnowledgePointsBtn = document.getElementById('toggleAllKnowledgePoints');
-    if (toggleAllKnowledgePointsBtn) {
-        toggleAllKnowledgePointsBtn.addEventListener('click', toggleAllKnowledgePoints);
+        // 初始触发一次加载知识点
+        console.log("初始加载知识点...");
+        loadKnowledgePoints();
+    } else {
+        console.error("未找到大纲章节选择器元素!");
     }
     
     // 添加开始生成按钮事件监听器
@@ -928,6 +935,10 @@ async function loadKnowledgePoints() {
     }
     
     const sectionId = outlineSection.value;
+    // 添加调试输出
+    console.log(`正在为章节 [${sectionId}] 加载知识点`);
+    
+    // 显示加载中状态
     knowledgePointsContainer.innerHTML = `
         <div class="d-flex justify-content-center">
             <div class="spinner-border spinner-border-sm" role="status">
@@ -938,6 +949,8 @@ async function loadKnowledgePoints() {
     `;
     
     try {
+        // 从API获取指定章节的知识点
+        console.log(`发送API请求: /api/outline/knowledge-points?section=${sectionId}`);
         const response = await fetch(`/api/outline/knowledge-points?section=${sectionId}`);
         if (!response.ok) {
             throw new Error(`获取知识点失败: ${response.statusText}`);
@@ -945,150 +958,645 @@ async function loadKnowledgePoints() {
         
         const data = await response.json();
         
-        if (data && data.knowledge_points && data.knowledge_points.length > 0) {
-            console.log("成功获取到知识点", data.knowledge_points);
+        // 添加更详细的调试输出
+        console.log(`API返回数据状态: ${response.status}, 完整响应:`, data);
+        if (data.section_stats) {
+            console.log("章节统计信息:", data.section_stats);
+        }
+        
+        // 确保知识点数据格式正确
+        const knowledgePoints = data.knowledge_points || [];
+        console.log(`章节 [${sectionId}] 返回的知识点数量: ${knowledgePoints.length}`);
+        
+        if (knowledgePoints.length > 0) {
+            // 输出前5个知识点的详细信息
+            console.log("前5个知识点详情:");
+            for (let i = 0; i < Math.min(5, knowledgePoints.length); i++) {
+                const item = knowledgePoints[i];
+                console.log(`知识点 ${i+1}:`, {
+                    section: item.section,
+                    title: item.title,
+                    knowledge: item.knowledge,
+                    Knowledge: item.Knowledge, // 添加首字母大写版本的检查
+                    difficulty: item.difficulty,
+                    tags: item.tags
+                });
+            }
             
-            // 按知识点显示，分类整理
-            const knowledgeGroups = {};
+            // 知识点按照章节和子章节分组
+            const knowledgePointsBySection = {};
             
-            // 分组整理知识点
-            data.knowledge_points.forEach(item => {
-                // 使用子标题作为分组键
-                const groupKey = item.title || '其他';
-                if (!knowledgeGroups[groupKey]) {
-                    knowledgeGroups[groupKey] = [];
+            // 处理所有知识点，根据章节和标题分组
+            knowledgePoints.forEach(item => {
+                // 使用章节编号作为主键 (如 "2.1.2")
+                if (!knowledgePointsBySection[item.section]) {
+                    knowledgePointsBySection[item.section] = {
+                        title: item.title,
+                        groups: {}
+                    };
                 }
-                knowledgeGroups[groupKey].push(item);
+                
+                // 根据父标签(如果存在)进行二级分组
+                const parentTag = item.tags && item.tags.length > 1 ? item.tags[1] : "其他";
+                
+                if (!knowledgePointsBySection[item.section].groups[parentTag]) {
+                    knowledgePointsBySection[item.section].groups[parentTag] = [];
+                }
+                
+                knowledgePointsBySection[item.section].groups[parentTag].push(item);
             });
+            
+            console.log(`章节 [${sectionId}] 按章节和组分类后的结构:`, knowledgePointsBySection);
             
             // 生成HTML
             let html = '';
-            for (const [groupName, items] of Object.entries(knowledgeGroups)) {
-                html += `<div class="knowledge-group mb-3">
-                            <div class="knowledge-group-header mb-2 fw-bold">${groupName}</div>
-                            <div class="knowledge-group-items">`;
-                            
-                items.forEach((item, index) => {
-                    const difficultyLabel = item.difficulty ? 
-                        ` <span class="badge bg-info">难度: ${item.difficulty}</span>` : '';
-                    const tagsHtml = item.tags && item.tags.length > 0 ? 
-                        ` <span class="badge bg-secondary">${item.tags.join(', ')}</span>` : '';
+            
+            // 标记目标章节索引，用于自动滚动
+            let targetSectionIndex = -1;
+            
+            // 处理章节排序
+            const sortedSections = Object.keys(knowledgePointsBySection).sort((a, b) => {
+                // 按照章节编号排序
+                const partsA = a.split('.');
+                const partsB = b.split('.');
+                
+                // 先比较第一个部分
+                if (partsA[0] !== partsB[0]) {
+                    return parseInt(partsA[0]) - parseInt(partsB[0]);
+                }
+                
+                // 再比较第二个部分
+                if (partsA.length > 1 && partsB.length > 1) {
+                    if (partsA[1] !== partsB[1]) {
+                        return parseInt(partsA[1]) - parseInt(partsB[1]);
+                    }
+                }
+                
+                // 最后比较第三个部分
+                if (partsA.length > 2 && partsB.length > 2) {
+                    return parseInt(partsA[2]) - parseInt(partsB[2]);
+                }
+                
+                return a.localeCompare(b);
+            });
+            
+            // 查找目标章节在排序后的位置
+            targetSectionIndex = sortedSections.findIndex(section => section === sectionId);
+            console.log(`目标章节 [${sectionId}] 在排序后的位置: ${targetSectionIndex}`);
+            
+            // 遍历章节
+            for (const section of sortedSections) {
+                const sectionData = knowledgePointsBySection[section];
+                const sectionElementId = `section-${section.replace(/\./g, '-')}`;
+                
+                // 添加唯一ID以便滚动定位
+                html += `<div id="${sectionElementId}" class="knowledge-section mb-3">
+                    <div class="knowledge-section-header fw-bold mb-2">${section} ${sectionData.title}</div>
+                    <div class="knowledge-section-items">`;
+                
+                // 处理分组排序，确保"其他"组始终在最后
+                const sortedGroups = Object.keys(sectionData.groups).sort((a, b) => {
+                    if (a === "其他") return 1;
+                    if (b === "其他") return -1;
+                    return a.localeCompare(b);
+                });
+                
+                // 遍历章节下的分组
+                for (const groupName of sortedGroups) {
+                    const items = sectionData.groups[groupName];
+                    
+                    if (groupName !== "其他" && groupName !== "") {
+                        html += `<div class="knowledge-subsection mb-2">
+                            <div class="knowledge-subsection-header fst-italic mb-1">${groupName}</div>
+                            <div class="ms-2">`;
+                    }
+                    
+                    // 渲染该分组下的所有知识点
+                    items.forEach((item, index) => {
+                        const itemId = `kp-${section.replace(/\./g, '-')}-${groupName.replace(/\s+/g, '-')}-${index}`;
+                        const difficultyBadge = item.difficulty ? 
+                            `<span class="badge bg-info ms-1">【${item.difficulty}】</span>` : '';
+                        
+                        // 检查知识点属性是否存在，兼容不同的属性命名
+                        const knowledgeText = item.knowledge || item.Knowledge || "未知知识点";
+                        
+                        html += `
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                    name="knowledgePoints" value="${knowledgeText}" 
+                                    id="${itemId}">
+                                <label class="form-check-label" for="${itemId}">
+                                    ${knowledgeText}${difficultyBadge}
+                                </label>
+                            </div>
+                        `;
+                    });
+                    
+                    if (groupName !== "其他" && groupName !== "") {
+                        html += `</div></div>`;
+                    }
+                }
+                
+                html += `</div></div>`;
+            }
+            
+            // 更新DOM
+            console.log(`更新知识点容器HTML, 长度: ${html.length}`);
+            knowledgePointsContainer.innerHTML = html || '<div class="alert alert-info">该章节没有知识点数据</div>';
+            
+            // 自动滚动到选中的章节
+            setTimeout(() => {
+                scrollToSelectedSection(sectionId, knowledgePointsContainer);
+            }, 100);
+        } else {
+            console.warn(`章节 [${sectionId}] 没有找到知识点，尝试从大纲读取`);
+            await loadKnowledgePointsFromOutline(sectionId);
+        }
+    } catch (error) {
+        console.error(`加载知识点失败:`, error);
+        await loadKnowledgePointsFromOutline(sectionId);
+    }
+}
+
+// 滚动到选中的章节
+function scrollToSelectedSection(sectionId, container) {
+    // 获取目标元素ID
+    const targetElementId = `section-${sectionId.replace(/\./g, '-')}`;
+    const targetElement = document.getElementById(targetElementId);
+    
+    if (targetElement) {
+        console.log(`找到目标章节元素: #${targetElementId}`);
+        
+        // 滚动容器到目标元素位置
+        const containerTop = container.getBoundingClientRect().top;
+        const targetTop = targetElement.getBoundingClientRect().top;
+        const scrollTop = targetTop - containerTop + container.scrollTop;
+        
+        console.log(`滚动容器到位置: ${scrollTop}px`);
+        container.scrollTop = scrollTop;
+    } else {
+        console.warn(`未找到目标章节元素: #${targetElementId}`);
+        
+        // 尝试使用更宽松的选择器查找最匹配的章节
+        const sections = container.querySelectorAll('.knowledge-section');
+        let bestMatch = null;
+        let bestMatchLength = 0;
+        
+        sections.forEach(section => {
+            const sectionIdAttr = section.id.replace('section-', '').replace(/-/g, '.');
+            // 检查是否是目标章节的父级或子级
+            if (sectionId.startsWith(sectionIdAttr) || sectionIdAttr.startsWith(sectionId)) {
+                // 选择匹配程度最高的（共同前缀最长的）
+                const commonPrefixLength = getCommonPrefixLength(sectionId, sectionIdAttr);
+                if (commonPrefixLength > bestMatchLength) {
+                    bestMatchLength = commonPrefixLength;
+                    bestMatch = section;
+                }
+            }
+        });
+        
+        if (bestMatch) {
+            console.log(`找到最匹配的章节元素: #${bestMatch.id}`);
+            const containerTop = container.getBoundingClientRect().top;
+            const targetTop = bestMatch.getBoundingClientRect().top;
+            const scrollTop = targetTop - containerTop + container.scrollTop;
+            
+            console.log(`滚动容器到最匹配位置: ${scrollTop}px`);
+            container.scrollTop = scrollTop;
+        } else {
+            console.warn(`没有找到任何匹配的章节元素`);
+        }
+    }
+}
+
+// 获取两个字符串的共同前缀长度
+function getCommonPrefixLength(str1, str2) {
+    const minLength = Math.min(str1.length, str2.length);
+    let commonLength = 0;
+    
+    for (let i = 0; i < minLength; i++) {
+        if (str1[i] === str2[i]) {
+            commonLength++;
+        } else {
+            break;
+        }
+    }
+    
+    return commonLength;
+}
+
+// 直接从大纲文件加载知识点
+async function loadKnowledgePointsFromOutline(sectionId) {
+    const knowledgePointsContainer = document.getElementById('knowledgePointsContainer');
+    if (!knowledgePointsContainer) {
+        console.error('知识点容器元素不存在');
+        return;
+    }
+    
+    console.log(`尝试从大纲文件直接加载章节 [${sectionId}] 的知识点`);
+    
+    try {
+        // 尝试从本地获取大纲文件内容
+        const response = await fetch('/static/data/2024年信息赛大纲.md');
+        if (!response.ok) {
+            throw new Error('获取大纲文件失败');
+        }
+        
+        const outlineText = await response.text();
+        console.log(`大纲文件加载成功，大小: ${outlineText.length} 字节`);
+        
+        const outlineData = parseOutlineMarkdown(outlineText, sectionId);
+        console.log(`成功解析章节 [${sectionId}] 的大纲数据，找到 ${outlineData.length} 个章节数据`);
+        
+        let html = '';
+        
+        // 章节排序
+        outlineData.sort((a, b) => {
+            // 按照章节编号排序
+            const partsA = a.id.split('.');
+            const partsB = b.id.split('.');
+            
+            // 先比较第一个部分
+            if (partsA[0] !== partsB[0]) {
+                return parseInt(partsA[0]) - parseInt(partsB[0]);
+            }
+            
+            // 再比较第二个部分
+            if (partsA.length > 1 && partsB.length > 1) {
+                if (partsA[1] !== partsB[1]) {
+                    return parseInt(partsA[1]) - parseInt(partsB[1]);
+                }
+            }
+            
+            // 最后比较第三个部分
+            if (partsA.length > 2 && partsB.length > 2) {
+                return parseInt(partsA[2]) - parseInt(partsB[2]);
+            }
+            
+            return a.id.localeCompare(b.id);
+        });
+        
+        // 标记目标章节索引
+        let targetSectionIndex = outlineData.findIndex(section => section.id === sectionId);
+        console.log(`目标章节 [${sectionId}] 在排序后的位置: ${targetSectionIndex}`);
+        
+        // 渲染章节
+        for (const section of outlineData) {
+            // 添加唯一ID以便滚动定位
+            const sectionElementId = `section-${section.id.replace(/\./g, '-')}`;
+            
+            html += `<div id="${sectionElementId}" class="knowledge-section mb-3">
+                <div class="knowledge-section-header fw-bold mb-2">${section.id} ${section.title}</div>
+                <div class="knowledge-section-items">`;
+            
+            // 分组排序，确保没有标题的分组放在最后
+            section.groups.sort((a, b) => {
+                if (!a.title && b.title) return 1;
+                if (a.title && !b.title) return -1;
+                return (a.title || "").localeCompare(b.title || "");
+            });
+            
+            // 渲染分组
+            for (const group of section.groups) {
+                if (group.title) {
+                    html += `<div class="knowledge-subsection mb-2">
+                        <div class="knowledge-subsection-header fst-italic mb-1">${group.title}</div>
+                        <div class="ms-2">`;
+                }
+                
+                // 渲染知识点
+                group.items.forEach((item, index) => {
+                    const itemId = `kp-${section.id.replace(/\./g, '-')}-${index}`;
+                    const difficultyBadge = item.difficulty ? 
+                        `<span class="badge bg-info ms-1">【${item.difficulty}】</span>` : '';
                     
                     html += `
                         <div class="form-check">
-                            <input class="form-check-input knowledge-point-checkbox" 
-                                type="checkbox" name="knowledgePoints" 
-                                value="${item.knowledge}" id="kp${index}-${groupName.replace(/\s+/g, '-')}">
-                            <label class="form-check-label" for="kp${index}-${groupName.replace(/\s+/g, '-')}">
-                                ${item.knowledge}${difficultyLabel}${tagsHtml}
+                            <input class="form-check-input" type="checkbox" 
+                                name="knowledgePoints" value="${item.text}" 
+                                id="${itemId}">
+                            <label class="form-check-label" for="${itemId}">
+                                ${item.text}${difficultyBadge}
                             </label>
                         </div>
                     `;
                 });
                 
-                html += `</div></div>`;
+                if (group.title) {
+                    html += `</div></div>`;
+                }
             }
             
-            knowledgePointsContainer.innerHTML = html;
-        } else {
-            console.warn("没有找到知识点，渲染默认值");
-            renderDefaultKnowledgePoints(sectionId);
+            html += `</div></div>`;
         }
+        
+        console.log(`成功生成章节 [${sectionId}] 的知识点HTML，长度: ${html.length}`);
+        knowledgePointsContainer.innerHTML = html || '<div class="alert alert-info">该章节没有知识点数据</div>';
+        
+        // 自动滚动到选中的章节
+        setTimeout(() => {
+            scrollToSelectedSection(sectionId, knowledgePointsContainer);
+        }, 100);
+        
     } catch (error) {
-        console.error('加载知识点失败:', error);
-        renderDefaultKnowledgePoints(sectionId);
+        console.error(`从大纲加载章节 [${sectionId}] 知识点失败:`, error);
+        renderDefaultKnowledgePointsFromOutline(sectionId);
     }
 }
 
-// 全选/取消全选知识点
-function toggleAllKnowledgePoints() {
-    const checkboxes = document.querySelectorAll('input.knowledge-point-checkbox[name="knowledgePoints"]');
+// 解析大纲Markdown文件
+function parseOutlineMarkdown(markdownText, targetSection) {
+    console.log(`解析大纲文件，目标章节: [${targetSection}]`);
     
-    // 检查是否至少有一个未选中
-    const hasUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+    const lines = markdownText.split('\n');
+    const result = [];
     
-    // 根据当前状态切换选择
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = hasUnchecked;
-    });
+    let currentH2 = null;
+    let currentH3 = null;
+    let currentGroup = null;
+    let inTargetSection = false;
+    
+    // 二级和三级标题的正则
+    const h2Regex = /^## ([\d\.]+) (.+)$/;
+    const h3Regex = /^### ([\d\.]+) (.+)$/;
+    // 列表项的正则
+    const numberedItemRegex = /^(\d+)\. \【(\d+)\】(.+)$/;
+    const bulletItemRegex = /^   - \【(\d+)\】(.+)$/;
+    
+    // 判断章节是否是目标章节的同级或下级
+    function isSameOrChildSection(sectionId, targetId) {
+        // 如果是完全匹配，直接返回true
+        if (sectionId === targetId) {
+            console.log(`章节 [${sectionId}] 与目标章节 [${targetId}] 完全匹配`);
+            return true;
+        }
+        
+        // 判断是否是上级章节（例如 targetId="2.1", sectionId="2"）
+        if (targetId.startsWith(sectionId + ".")) {
+            console.log(`章节 [${sectionId}] 是目标章节 [${targetId}] 的上级章节`);
+            return true;
+        }
+        
+        // 判断是否是下级章节（例如 targetId="2", sectionId="2.1"）
+        if (sectionId.startsWith(targetId + ".")) {
+            console.log(`章节 [${sectionId}] 是目标章节 [${targetId}] 的下级章节`);
+            return true;
+        }
+        
+        // 判断是否是同级章节的子章节
+        // 例如，如果 targetId="2.1", 那么 "2.2.1" 等同级章节的子章节也应该显示
+        const targetParts = targetId.split('.');
+        const sectionParts = sectionId.split('.');
+        
+        // 如果是根章节，保留所有内容
+        if (targetId === 'all') {
+            console.log(`目标章节是"all"，章节 [${sectionId}] 应显示`);
+            return true;
+        }
+        
+        // 对于"2.1"这样的格式，我们需要检查是否同属于"2"这个大章节
+        if (targetParts.length >= 2 && sectionParts.length >= 2) {
+            // 检查前面部分是否相同（例如 "2.1" 和 "2.2" 同属于 "2"）
+            if (targetParts[0] === sectionParts[0]) {
+                console.log(`章节 [${sectionId}] 与目标章节 [${targetId}] 同属于第 ${targetParts[0]} 大章节`);
+                
+                // 特殊处理2.1.2章节匹配
+                if (targetId === "2.1.2" && sectionId === "2.1.2") {
+                    console.log(`特殊匹配: 目标章节和当前章节都是2.1.2`);
+                    return true;
+                }
+                
+                // 对于同级章节，只要同属一个父章节，就应该显示
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    let matchedSectionCount = 0;
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // 匹配二级标题 (## 2.1 入门级)
+        const h2Match = line.match(h2Regex);
+        if (h2Match) {
+            const id = h2Match[1];
+            const title = h2Match[2];
+            
+            // 检查是否为目标章节或相关章节
+            if (isSameOrChildSection(id, targetSection)) {
+                inTargetSection = true;
+                currentH2 = { id, title, groups: [] };
+                result.push(currentH2);
+                console.log(`匹配到相关的二级标题: ${id} ${title}`);
+                matchedSectionCount++;
+            } else {
+                inTargetSection = false;
+            }
+            continue;
+        }
+        
+        if (!inTargetSection) continue;
+        
+        // 匹配三级标题 (### 2.1.1 基础知识与编程环境)
+        const h3Match = line.match(h3Regex);
+        if (h3Match) {
+            const id = h3Match[1];
+            const title = h3Match[2];
+            
+            // 检查是否为目标章节或相关章节
+            if (isSameOrChildSection(id, targetSection)) {
+                currentH3 = { id, title, groups: [] };
+                result.push(currentH3);
+                currentGroup = null;
+                console.log(`匹配到相关的三级标题: ${id} ${title}`);
+                matchedSectionCount++;
+            } else {
+                currentH3 = null; // 不相关的章节，不解析其内容
+            }
+            continue;
+        }
+        
+        // 不是我们要找的章节就跳过
+        if (!currentH3) continue;
+        
+        // 数字列表项，可能是一个新组 (1. 【1】计算机的基本构成)
+        const numberedMatch = line.match(numberedItemRegex);
+        if (numberedMatch) {
+            const number = numberedMatch[1];
+            const difficulty = numberedMatch[2];
+            const text = numberedMatch[3].trim();
+            
+            // 检查下一行是否有缩进的列表项，如果有则这是一个组标题
+            if (i + 1 < lines.length && lines[i + 1].trim().startsWith('   -')) {
+                currentGroup = { title: text, items: [] };
+                currentH3.groups.push(currentGroup);
+                console.log(`检测到组标题: ${text} (在 ${currentH3.id} 下)`);
+            } else {
+                // 这是一个直接的知识点
+                if (!currentGroup) {
+                    currentGroup = { title: '', items: [] };
+                    currentH3.groups.push(currentGroup);
+                }
+                currentGroup.items.push({ text, difficulty });
+                
+                // 如果是特殊章节2.1.2，添加日志
+                if (currentH3.id === "2.1.2") {
+                    console.log(`在2.1.2章节下找到独立知识点: ${text}, 难度: ${difficulty}`);
+                }
+            }
+            continue;
+        }
+        
+        // 缩进的列表项 (   - 【1】标识符、关键字、常量、变量、字符串、表达式的概念)
+        const bulletMatch = line.match(bulletItemRegex);
+        if (bulletMatch && currentGroup) {
+            const difficulty = bulletMatch[1];
+            const text = bulletMatch[2].trim();
+            currentGroup.items.push({ text, difficulty });
+            
+            // 如果是特殊章节2.1.2，添加日志
+            if (currentH3 && currentH3.id === "2.1.2") {
+                console.log(`在2.1.2章节中找到子条目: ${text}, 难度: ${difficulty}`);
+            }
+        }
+    }
+    
+    console.log(`解析大纲文件完成，匹配到 ${matchedSectionCount} 个相关章节，共 ${result.length} 个章节数据`);
+    
+    return result;
 }
 
-// 渲染默认知识点
-function renderDefaultKnowledgePoints(sectionId) {
+// 为特定章节渲染默认知识点（基于大纲文件格式）
+function renderDefaultKnowledgePointsFromOutline(sectionId) {
     const knowledgePointsContainer = document.getElementById('knowledgePointsContainer');
-    if (!knowledgePointsContainer) return;
-    
-    let knowledgeGroups = {};
-    
-    // 基于章节ID提供默认知识点
-    if (sectionId.startsWith('2.1.1')) {
-        knowledgeGroups = {
-            '计算机基础': ['计算机基本构成', '操作系统基本概念', '计算机网络基础'],
-            '编程环境': ['编程环境', '编译与运行', 'IDE使用']
-        };
-    } else if (sectionId.startsWith('2.1.2')) {
-        knowledgeGroups = {
-            '基础语法': ['变量与常量', '基本数据类型', '条件语句', '循环语句'],
-            '数据处理': ['数组', '函数', '字符串处理', 'STL基础']
-        };
-    } else if (sectionId.startsWith('2.1.3')) {
-        knowledgeGroups = {
-            '线性结构': ['链表', '栈', '队列'], 
-            '树结构': ['二叉树', '二叉搜索树'], 
-            '图结构': ['图的表示', '图的遍历']
-        };
-    } else if (sectionId.startsWith('2.1.4')) {
-        knowledgeGroups = {
-            '基础算法': ['枚举法', '模拟法', '贪心算法', '递归算法'],
-            '查找排序': ['二分查找', '排序算法'],
-            '搜索与DP': ['深度优先搜索', '广度优先搜索', '动态规划']
-        };
-    } else if (sectionId.startsWith('2.1.5')) {
-        knowledgeGroups = {
-            '基础数学': ['进制转换', '素数', '最大公约数', '组合数学', 'ASCII码']
-        };
-    } else if (sectionId.startsWith('2.2')) {
-        knowledgeGroups = {
-            '高级数据结构': ['STL容器', '并查集', '线段树'],
-            '图论算法': ['最短路算法', '最小生成树'],
-            '动态规划': ['状态压缩DP', '区间DP', '树形DP']
-        };
-    } else if (sectionId.startsWith('2.3')) {
-        knowledgeGroups = {
-            '高级数据结构': ['平衡树', '字典树', '哈希表'],
-            '图论高级算法': ['网络流', '二分图匹配'],
-            '高级算法': ['计算几何', '博弈论', '字符串算法']
-        };
-    } else {
-        knowledgeGroups = {
-            '基础': ['算法基础', '数据结构', '数学基础']
-        };
+    if (!knowledgePointsContainer) {
+        console.error('知识点容器元素不存在');
+        return;
     }
     
-    // 生成HTML
-    let html = '';
-    for (const [groupName, items] of Object.entries(knowledgeGroups)) {
-        html += `<div class="knowledge-group mb-3">
-                    <div class="knowledge-group-header mb-2 fw-bold">${groupName}</div>
-                    <div class="knowledge-group-items">`;
-                    
-        items.forEach((item, index) => {
-            html += `
-                <div class="form-check">
-                    <input class="form-check-input knowledge-point-checkbox" 
-                        type="checkbox" name="knowledgePoints" 
-                        value="${item}" id="kp${index}-${groupName.replace(/\s+/g, '-')}">
-                    <label class="form-check-label" for="kp${index}-${groupName.replace(/\s+/g, '-')}">
-                        ${item}
-                    </label>
-                </div>
-            `;
+    console.log(`渲染章节 [${sectionId}] 的默认知识点`);
+
+    // 创建一个简单的模拟数据结构
+    const mockData = [];
+    
+    // 根据章节ID创建不同的模拟数据
+    if (sectionId.startsWith("2.1")) {
+        // 入门级
+        mockData.push({
+            id: sectionId,
+            title: "入门级章节内容",
+            groups: [
+                {
+                    title: "基础知识点",
+                    items: [
+                        { text: "这是章节 " + sectionId + " 的示例知识点1", difficulty: "1" },
+                        { text: "这是章节 " + sectionId + " 的示例知识点2", difficulty: "2" }
+                    ]
+                }
+            ]
         });
+    } else if (sectionId.startsWith("2.2")) {
+        // 提高级
+        mockData.push({
+            id: sectionId,
+            title: "提高级章节内容",
+            groups: [
+                {
+                    title: "进阶知识点",
+                    items: [
+                        { text: "这是章节 " + sectionId + " 的示例知识点1", difficulty: "3" },
+                        { text: "这是章节 " + sectionId + " 的示例知识点2", difficulty: "4" }
+                    ]
+                }
+            ]
+        });
+    } else if (sectionId.startsWith("2.3")) {
+        // NOI级
+        mockData.push({
+            id: sectionId,
+            title: "NOI级章节内容",
+            groups: [
+                {
+                    title: "高级知识点",
+                    items: [
+                        { text: "这是章节 " + sectionId + " 的示例知识点1", difficulty: "7" },
+                        { text: "这是章节 " + sectionId + " 的示例知识点2", difficulty: "8" }
+                    ]
+                }
+            ]
+        });
+    } else {
+        // 通用
+        mockData.push({
+            id: sectionId,
+            title: "章节内容",
+            groups: [
+                {
+                    title: "一般知识点",
+                    items: [
+                        { text: "无法获取章节 " + sectionId + " 的实际知识点", difficulty: "1" },
+                        { text: "请尝试刷新或选择其他章节", difficulty: "1" }
+                    ]
+                }
+            ]
+        });
+    }
+    
+    let html = '';
+    
+    // 渲染模拟数据
+    for (const section of mockData) {
+        // 添加唯一ID以便滚动定位
+        const sectionElementId = `section-${section.id.replace(/\./g, '-')}`;
+        
+        html += `<div id="${sectionElementId}" class="knowledge-section mb-3">
+            <div class="knowledge-section-header fw-bold mb-2">${section.id} ${section.title}</div>
+            <div class="knowledge-section-items alert alert-warning">
+                <p>⚠️ 无法加载实际知识点，显示默认内容</p>
+                <div class="knowledge-section-items">`;
+        
+        for (const group of section.groups) {
+            if (group.title) {
+                html += `<div class="knowledge-subsection mb-2">
+                    <div class="knowledge-subsection-header fst-italic mb-1">${group.title}</div>
+                    <div class="ms-2">`;
+            }
+            
+            group.items.forEach((item, index) => {
+                const itemId = `kp-default-${section.id.replace(/\./g, '-')}-${index}`;
+                const difficultyBadge = item.difficulty ? 
+                    `<span class="badge bg-info ms-1">【${item.difficulty}】</span>` : '';
+                
+                html += `
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" 
+                            name="knowledgePoints" value="${item.text}" 
+                            id="${itemId}">
+                        <label class="form-check-label" for="${itemId}">
+                            ${item.text}${difficultyBadge}
+                        </label>
+                    </div>
+                `;
+            });
+            
+            if (group.title) {
+                html += `</div></div>`;
+            }
+        }
         
         html += `</div></div>`;
     }
     
     knowledgePointsContainer.innerHTML = html;
+    
+    // 自动滚动到选中的章节
+    setTimeout(() => {
+        scrollToSelectedSection(sectionId, knowledgePointsContainer);
+    }, 100);
 }
 
 // 生成AI题目

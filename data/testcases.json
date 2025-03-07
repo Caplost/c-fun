@@ -126,6 +126,43 @@
       "is_example": false
     }
   ],
+  "13": [
+    {
+      "id": 40,
+      "problem_id": 13,
+      "input": "3\nADD 5\nSHL\nXOR 3",
+      "output": "9",
+      "is_example": true
+    },
+    {
+      "id": 41,
+      "problem_id": 13,
+      "input": "4\nADD 15\nSHR\nXOR 8\nSHL",
+      "output": "2",
+      "is_example": true
+    },
+    {
+      "id": 42,
+      "problem_id": 13,
+      "input": "2\nSHL\nSHL",
+      "output": "0",
+      "is_example": false
+    },
+    {
+      "id": 43,
+      "problem_id": 13,
+      "input": "1\nXOR 15",
+      "output": "15",
+      "is_example": false
+    },
+    {
+      "id": 44,
+      "problem_id": 13,
+      "input": "5\nADD 3\nSHL\nSHR\nADD 1\nXOR 7",
+      "output": "6",
+      "is_example": false
+    }
+  ],
   "2": [
     {
       "id": 3,

@@ -66,6 +66,37 @@
             background-color: #f8f9fa;
             border-left: 3px solid #007bff;
         }
+        
+        /* 知识点标签样式 */
+        .badge {
+            font-size: 0.75rem;
+            font-weight: normal;
+        }
+        .problem-knowledge-tags {
+            margin-top: 5px;
+        }
+        
+        /* 知识点章节结构样式 */
+        .knowledge-section {
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        .knowledge-section:last-child {
+            border-bottom: none;
+        }
+        .knowledge-section-header {
+            color: #0d6efd;
+        }
+        .knowledge-subsection-header {
+            color: #6c757d;
+            font-size: 0.9rem;
+            border-left: 2px solid #6c757d;
+            padding-left: 8px;
+        }
+        #knowledgePointsContainer {
+            max-height: 350px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -109,7 +140,7 @@
                                         <th>状态</th>
                                     </tr>
                                 </thead>
-                                <tbody id="problemsList">
+                                <tbody id="problemsList" class="align-middle">
                                     <!-- 题目列表将通过JavaScript填充 -->
                                 </tbody>
                             </table>
